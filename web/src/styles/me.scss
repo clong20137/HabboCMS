@@ -1,0 +1,331 @@
+.me-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 0.9fr;
+    gap: 18px;
+    align-items: start;
+}
+
+
+/* (optional safety) */
+
+.panel-main {
+    align-self: start;
+}
+
+@media (max-width: 980px) {
+    .me-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
+.panel-side .side-block+.side-block {
+    margin-top: 18px;
+    /* was 14px */
+}
+
+.panel-side .panel-body {
+    padding: 14px 16px 16px;
+}
+
+
+/* NEWS */
+
+.news-top {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.news-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.news-media {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.news-img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+
+/* Full overlay area */
+
+.news-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 12px;
+    pointer-events: none;
+    /* lets image be non-interactive, dots/buttons opt-in below */
+}
+
+
+/* gradient backing */
+
+.news-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.35) 45%, rgba(0, 0, 0, 0.78) 100%);
+}
+
+
+/* keep overlay text above gradient */
+
+.news-overlay__inner {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.news-title {
+    font-weight: 900;
+    font-size: 18px;
+    /* bigger */
+    letter-spacing: 0.3px;
+    line-height: 1.1;
+    color: rgba(255, 255, 255, 0.96);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.news-desc {
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.25;
+    color: rgba(255, 255, 255, 0.88);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+    max-height: 2.6em;
+    /* keep it tight */
+    overflow: hidden;
+}
+
+.news-author {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.75);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+
+/* dots on image bottom-center */
+
+.news-dots {
+    position: relative;
+    z-index: 3;
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    pointer-events: auto;
+    /* clickable */
+}
+
+.news-xfade-stage {
+    position: relative;
+    width: 100%;
+    height: auto;
+}
+
+.news-xfade-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 1;
+    transition: opacity var(--xfade-ms, 420ms) ease-in-out;
+    will-change: opacity;
+}
+
+
+/* ensure the stage takes height of the image */
+
+.news-xfade-stage::before {
+    content: "";
+    display: block;
+    padding-top: calc(300 / 759 * 100%);
+    /* matches your width/height ratio */
+}
+
+.news-xfade-slide img.news-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+/* current fades out */
+
+.news-xfade-slide--current.is-fading-out {
+    opacity: 0;
+}
+
+
+/* next starts hidden, fades in */
+
+.news-xfade-slide--next {
+    opacity: 0;
+}
+
+.news-xfade-slide--next.is-fading-in {
+    opacity: 1;
+}
+
+.news-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    border: 0;
+    background: rgba(255, 255, 255, 0.22);
+    cursor: pointer;
+    padding: 0;
+}
+
+.news-dot.active {
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.news-btn {
+    width: 100%;
+}
+
+.news-fade {
+    opacity: 1;
+    transition: opacity 300ms ease-in-out;
+}
+
+.news-fade.is-fading {
+    opacity: 0;
+}
+
+
+
+.news-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.news-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.10);
+    cursor: pointer;
+    transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.news-dot:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.news-dot.active {
+    background: rgba(255, 255, 255, 0.32);
+    border-color: rgba(255, 255, 255, 0.30);
+}
+
+
+
+.panel-side {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    /* adjust to taste */
+}
+
+
+/* If you keep the old margin rule, remove it or leave it—gap handles it cleanly */
+
+
+/* .panel-side .side-block + .side-block { margin-top: 18px; } */
+
+
+
+.panel-side .panel-body,
+.panel-side .panel-body * {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+
+
+.panel-side .muted {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+
+
+.panel-side .corp-name {
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 800;
+}
+
+
+/* Right column now stacks separate panels */
+
+.me-side {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    /* vertical spacing between modules */
+}
+
+.me-name {
+    font-size: 20px;
+    font-weight: 900;
+    color: #FFF;
+}
+
+.me-sub {
+    color: var(--muted);
+    font-weight: 700;
+    margin-top: 2px;
+    color: #FFF;
+}
+
+.mini-stats {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    color: #FFF;
+}
+
+.stat-label {
+    font-weight: 900;
+    margin-bottom: 8px;
+    color: #FFF;
+}
+
+
+/* Make text white inside side panels */
+
+.panel-side .panel-body,
+.panel-side .panel-body * {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+
+/* Keep muted toned down */
+
+.panel-side .muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}

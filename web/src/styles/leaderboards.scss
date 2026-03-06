@@ -1,0 +1,329 @@
+/* =========================
+LEADERBOARDS
+========================= */
+
+.leaderboards-page {
+    position: relative;
+}
+
+
+/* Always 3 columns when there are 3 cards visible */
+
+.leaderboards-grid--3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
+}
+
+@media (max-width: 1100px) {
+    .leaderboards-grid--3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.leaderboard-head {
+    background: linear-gradient(180deg, var(--secondary-color) 50%, var(--secondary-dark, var(--secondary-color)) 50%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px 14px;
+    color: var(--on-secondary);
+}
+
+.leaderboard-head__left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 950;
+    letter-spacing: 0.6px;
+}
+
+.leaderboard-body {
+    padding: 14px;
+}
+
+.leaderboard-alert {
+    margin-bottom: 12px;
+    animation: lbFadeIn 180ms ease both;
+}
+
+@keyframes lbFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.leaderboard-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
+    transition: transform 150ms ease, filter 150ms ease, border-color 150ms ease;
+}
+
+.leaderboard-row:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.02);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.lb-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.lb-rank {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    font-weight: 950;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.lb-avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.lb-meta {
+    min-width: 0;
+}
+
+.lb-name {
+    font-weight: 950;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #FFF;
+}
+
+.lb-sub {
+    margin-top: 4px;
+    font-weight: 750;
+    font-size: 13px;
+    color: #FFF;
+}
+
+.lb-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: #FFF;
+}
+
+.lb-value {
+    font-weight: 950;
+    letter-spacing: 0.2px;
+}
+
+
+/* TOP 3: GOLD / SILVER / BRONZE */
+
+.leaderboard-row.is-gold {
+    background: #c39513;
+    overflow: hidden;
+}
+
+.leaderboard-row.is-silver {
+    background: #bbb;
+}
+
+.leaderboard-row.is-bronze {
+    background: #9d5e00;
+}
+
+.leaderboard-row.is-gold .lb-rank {
+    background: rgba(255, 205, 65, 0.22);
+    border-color: rgba(255, 205, 65, 0.38);
+}
+
+.leaderboard-row.is-silver .lb-rank {
+    background: rgba(215, 225, 235, 0.20);
+    border-color: rgba(215, 225, 235, 0.34);
+}
+
+.leaderboard-row.is-bronze .lb-rank {
+    background: rgba(205, 127, 50, 0.18);
+    border-color: rgba(205, 127, 50, 0.34);
+}
+
+
+/* =========================
+CLEAN GOLD SPARKLE (NO GRAIN)
+========================= */
+
+.leaderboard-row.is-gold {
+    position: relative;
+    overflow: hidden;
+}
+
+
+/* subtle shimmer sweep */
+
+.leaderboard-row.is-gold::before {
+    content: "";
+    position: absolute;
+    inset: -60% -80%;
+    background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.35) 50%, transparent 60%);
+    transform: translateX(-70%) rotate(8deg);
+    animation: goldShimmer 2.8s ease-in-out infinite;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+
+/* sparkles (few, clean, twinkle) */
+
+.leaderboard-row.is-gold::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 18% 35%, rgba(255, 255, 255, .95) 0 2px, transparent 3px), radial-gradient(circle at 35% 60%, rgba(255, 255, 255, .75) 0 1.5px, transparent 3px), radial-gradient(circle at 52% 28%, rgba(255, 255, 255, .90) 0 2px, transparent 3px), radial-gradient(circle at 72% 42%, rgba(255, 255, 255, .80) 0 1.5px, transparent 3px), radial-gradient(circle at 86% 30%, rgba(255, 255, 255, .95) 0 2px, transparent 3px), radial-gradient(circle at 78% 70%, rgba(255, 255, 255, .75) 0 1.5px, transparent 3px);
+    opacity: 0.55;
+    animation: goldTwinkle 1.6s ease-in-out infinite alternate;
+}
+
+
+/* keep content above sparkle layers */
+
+.leaderboard-row.is-gold>* {
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes goldShimmer {
+    0% {
+        transform: translateX(-70%) rotate(8deg);
+        opacity: 0;
+    }
+    15% {
+        opacity: 0.85;
+    }
+    55% {
+        opacity: 0.35;
+    }
+    100% {
+        transform: translateX(70%) rotate(8deg);
+        opacity: 0;
+    }
+}
+
+@keyframes goldTwinkle {
+    0% {
+        opacity: 0.25;
+        filter: blur(0px);
+    }
+    100% {
+        opacity: 0.7;
+        filter: blur(0.15px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .leaderboard-row.is-gold::before,
+    .leaderboard-row.is-gold::after {
+        animation: none;
+    }
+}
+
+
+/* =========================
+DOTS / PAGER
+========================= */
+
+.leaderboards-dots {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.lb-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.lb-dot:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.10);
+}
+
+
+/* active dot matches theme primary */
+
+.lb-dot.active {
+    width: 34px;
+    /* pill like your ref */
+    background: linear-gradient(180deg, var(--primary-color) 50%, var(--primary-dark) 50%);
+    border-color: rgba(255, 255, 255, 0.20);
+}
+
+.lb-xfade-stage {
+    position: relative;
+}
+
+.lb-xfade-layer {
+    position: absolute;
+    inset: 0;
+}
+
+.lb-xfade-page {
+    position: absolute;
+    inset: 0;
+    opacity: 1;
+    transition: opacity var(--xfade-ms, 420ms) ease-in-out;
+}
+
+.lb-xfade-page--current.is-fading-out {
+    opacity: 0;
+}
+
+.lb-xfade-page--next {
+    opacity: 0;
+}
+
+.lb-xfade-page--next.is-prep {
+    opacity: 0;
+}
+
+.lb-xfade-page--next.is-fading-in {
+    opacity: 1;
+}
+
+.leaderboard-head__iconImg {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}

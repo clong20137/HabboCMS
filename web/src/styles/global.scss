@@ -1,0 +1,1246 @@
+/* =========================
+THEME VARIABLES (runtime)
+========================= */
+
+:root {
+    --primary-color: #3b82f6;
+    --primary-dark: #2563eb;
+    --on-primary: #ffffff;
+    --secondary-color: #2a2f36;
+    --secondary-dark: #1f2329;
+    --on-secondary: #ffffff;
+    --footer-color: #1f2329;
+    --footer-dark: #14171b;
+    --on-footer: #ffffff;
+    --panel-bg: rgba(17, 20, 24, 0.75);
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --text: #e8edf3;
+    --muted: rgba(232, 237, 243, 0.65);
+}
+
+
+/* =========================
+BASE
+========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color: var(--text);
+    background: #0b0f14;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+img {
+    display: block;
+}
+
+
+/* =========================
+SITE LAYOUT
+========================= */
+
+.site {
+    min-height: 100vh;
+    padding-bottom: 52px;
+    /* space for fixed footer */
+}
+
+
+/* HEADER with background.gif (set inline in component too, but safe fallback) */
+
+.site-header {
+    height: 120px;
+    background-position: center;
+    background-repeat: repeat;
+}
+
+.site-header__inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    height: 100%;
+    padding: 18px 18px 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.brand-wrap {
+    display: flex;
+    align-items: flex-start;
+}
+
+.brand__logo-img {
+    width: 170px;
+    height: auto;
+    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .35));
+}
+
+.header-actions--stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+
+/* Right side: Online above Enter Client */
+
+.header-right {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.online-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+
+/* Online pill hover float */
+
+.online-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, .90);
+    border: 1px solid rgba(255, 255, 255, .09);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .25);
+    transition: transform .18s ease, box-shadow .18s ease;
+    color: #FFF;
+}
+
+.online-pill:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, .32);
+}
+
+@keyframes floatBob {
+    0% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+.online-pill {
+    animation: floatBob 2.6s ease-in-out infinite;
+    will-change: transform;
+}
+
+
+/* Optional: make it pause when user hovers (feels nice) */
+
+.online-pill:hover {
+    animation-play-state: paused;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #38d46a;
+    box-shadow: 0 0 0 2px rgba(56, 212, 106, .18);
+}
+
+.online-text {
+    font-weight: 700;
+    letter-spacing: .2px;
+}
+
+
+/* NAV BAR */
+
+.site-nav {
+    /* EXACT gradient you asked for (secondary controls this) */
+    background: linear-gradient(180deg, var(--secondary-color) 50%, var(--secondary-dark, var(--secondary-color)) 50%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.site-nav__inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-icon,
+.nav-ico {
+    width: 18px;
+    height: 18px;
+}
+
+.nav-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    color: var(--on-secondary);
+    opacity: .9;
+    border: 1px solid transparent;
+    transition: transform .18s ease, filter .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.nav-item:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, .12);
+    background: rgba(0, 0, 0, .18);
+    cursor: pointer;
+}
+
+.nav-item.active {
+    opacity: 1;
+    border-color: rgba(255, 255, 255, .14);
+    background: rgba(0, 0, 0, .22);
+}
+
+.nav-ico {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* Theme dropdown floats right of nav */
+
+.nav-right {
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-ico {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+}
+
+
+/* CONTENT background = bgspace.gif */
+
+.site-content {
+    min-height: calc(100vh - 120px - 52px - 54px);
+    background-image: url("../assets/bg.png");
+    background-repeat: repeat;
+    background-size: auto;
+}
+
+.site-content__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 22px 18px;
+}
+
+
+/* FOOTER fixed bottom, editable */
+
+.site-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 52px;
+    background: linear-gradient(180deg, var(--footer-color), var(--footer-dark, var(--footer-color)));
+    color: var(--on-footer);
+    border-top: 1px solid rgba(255, 255, 255, .08);
+    z-index: 999;
+}
+
+.site-footer__inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    height: 100%;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+
+/* =========================
+BUTTONS
+========================= */
+
+.btn {
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(0, 0, 0, .25);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform .18s ease, filter .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+}
+
+.btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary {
+    color: var(--on-primary);
+    border-color: rgba(255, 255, 255, .16);
+    background: linear-gradient(180deg, var(--primary-color) 50%, var(--primary-dark) 50%);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .25);
+}
+
+.btn-secondary {
+    color: var(--on-secondary);
+    border-color: rgba(255, 255, 255, .16);
+    background: linear-gradient(180deg, var(--secondary-color) 50%, var(--secondary-dark) 50%);
+}
+
+.btn-enter {
+    min-width: 190px;
+    text-align: center;
+}
+
+@keyframes btnPulseGlow {
+    0% {
+        box-shadow: 0 8px 18px rgba(0, 0, 0, .25), 0 0 0 0 rgba(255, 255, 255, .18);
+    }
+    50% {
+        box-shadow: 0 12px 26px rgba(0, 0, 0, .35), 0 0 0 10px rgba(255, 255, 255, .06);
+    }
+    100% {
+        box-shadow: 0 8px 18px rgba(0, 0, 0, .25), 0 0 0 0 rgba(255, 255, 255, .0);
+    }
+}
+
+@keyframes shimmerMove {
+    0% {
+        background-position: -500px 0;
+    }
+    100% {
+        background-position: 500px 0;
+    }
+}
+
+.loading-shimmer {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .06);
+}
+
+
+/* The moving shine */
+
+.loading-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .10) 20%, rgba(255, 255, 255, .22) 40%, rgba(255, 255, 255, .10) 60%, rgba(255, 255, 255, 0) 100%);
+    background-size: 700px 100%;
+    animation: shimmerMove 1.2s linear infinite;
+    opacity: .9;
+}
+
+
+/* common skeleton blocks */
+
+.skeleton-line {
+    height: 14px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, .22);
+    border: 1px solid rgba(255, 255, 255, .08);
+}
+
+.skeleton-line+.skeleton-line {
+    margin-top: 10px;
+}
+
+.skeleton-card {
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    background: rgba(0, 0, 0, .18);
+}
+
+
+/* apply to Enter Client only */
+
+.btn-enter,
+.btn-primary.btn-enter,
+a.btn-enter {
+    position: relative;
+    animation: btnPulseGlow 1.8s ease-in-out infinite;
+    will-change: box-shadow;
+}
+
+
+/* Pause pulse on hover so it feels intentional */
+
+.btn-enter:hover {
+    animation-play-state: paused;
+}
+
+
+/* =========================
+THEME DROPDOWN
+========================= */
+
+
+/* Theme menu */
+
+.theme-menu {
+    min-width: 280px;
+}
+
+.theme-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 6px 6px 10px 6px;
+}
+
+.theme-tab {
+    flex: 1;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    background: rgba(255, 255, 255, .06);
+    color: rgba(255, 255, 255, .9);
+    cursor: pointer;
+    &:hover {
+        background: rgba(255, 255, 255, .10);
+    }
+    &.active {
+        background: rgba(255, 255, 255, .14);
+        border-color: rgba(255, 255, 255, .18);
+    }
+}
+
+.theme-picker {
+    padding: 0 6px 6px 6px;
+}
+
+.theme-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+}
+
+.theme-color {
+    width: 44px;
+    height: 34px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 10px;
+    background: transparent;
+    padding: 0;
+}
+
+.theme-hex {
+    flex: 1;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    background: rgba(0, 0, 0, .25);
+    color: rgba(255, 255, 255, .92);
+    padding: 0 10px;
+    outline: none;
+}
+
+.theme-preview {
+    display: flex;
+    gap: 10px;
+    padding: 0 6px 10px 6px;
+}
+
+.theme-chip {
+    flex: 1;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    border: 1px solid rgba(0, 0, 0, .25);
+}
+
+
+/* =========================
+ME PAGE PANELS
+========================= */
+
+.me-grid {
+    display: grid;
+    grid-template-columns: 1.6fr .9fr;
+    gap: 18px;
+}
+
+@media (max-width: 980px) {
+    .me-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .25);
+}
+
+.panel-head {
+    /* divided gradient style like your screenshot (secondary controls this) */
+    background: linear-gradient(180deg, var(--secondary-color) 50%, var(--secondary-dark, var(--secondary-color)) 50%);
+    color: var(--on-secondary);
+    text-align: center;
+    font-weight: 900;
+    letter-spacing: .6px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.panel-body {
+    padding: 16px;
+}
+
+.panel-title {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.avatar-placeholder {
+    width: 70px;
+    height: 70px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .10);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 10px;
+}
+
+@media (max-width: 620px) {
+    .stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bar {
+    height: 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .45);
+    border: 1px solid rgba(255, 255, 255, .08);
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 999px;
+}
+
+.bar-fill--health {
+    background: linear-gradient(180deg, #e05a5a 50%, #b83b3b 50%);
+}
+
+.bar-fill--energy {
+    background: linear-gradient(180deg, #4b6cb7 50%, #2f3f99 50%);
+}
+
+.stat-value {
+    margin-top: 8px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, .85);
+}
+
+@media (max-width: 900px) {
+    .mini-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.mini {
+    text-align: center;
+    padding: 10px 10px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, .28);
+    border: 1px solid rgba(255, 255, 255, .08);
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.panel-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+}
+
+.panel-side .side-block+.side-block {
+    margin-top: 14px;
+}
+
+.corp {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.corp-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .10);
+    font-weight: 900;
+    color: rgba(232, 237, 243, .8);
+}
+
+.corp-name {
+    font-weight: 900;
+    font-size: 16px;
+}
+
+.discord-row .btn {
+    justify-content: center;
+}
+
+
+/* --- Dropdowns --- */
+
+.nav-dropdown {
+    position: relative;
+    display: inline-flex;
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 0;
+        min-width: 200px;
+        background: #15181d;
+        border: 1px solid rgba(255, 255, 255, .08);
+        border-radius: 10px;
+        padding: 8px;
+        box-shadow: 0 14px 30px rgba(0, 0, 0, .35);
+        opacity: 0;
+        transform: translateY(-6px);
+        pointer-events: none;
+        transition: 120ms ease;
+        z-index: 999;
+    }
+    &.open .dropdown-menu {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+}
+
+.dropdown-menu--right {
+    left: auto !important;
+    right: 0;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    transition: transform .18s ease, filter .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    color: rgba(255, 255, 255, .92);
+    text-decoration: none;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    &:hover {
+        background: rgba(255, 255, 255, .06);
+        transition: transform .18s ease, filter .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    }
+}
+
+.dropdown-item--danger {
+    color: #ffd2d2;
+    &:hover {
+        background: rgba(255, 90, 90, .12);
+    }
+}
+
+.dropdown-sep {
+    height: 1px;
+    margin: 8px 6px;
+    background: rgba(255, 255, 255, .08);
+}
+
+.nav-item--btn {
+    background: transparent;
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+}
+
+.chev {
+    margin-left: 6px;
+    opacity: .7;
+}
+
+
+/* Right side nav area */
+
+.nav-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+/* icon button like the screenshot */
+
+.icon-btn {
+    height: 34px;
+    min-width: 44px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    background: rgba(0, 0, 0, .25);
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    &:hover {
+        background: rgba(0, 0, 0, .35);
+    }
+}
+
+.icon-gear {
+    font-size: 16px;
+    line-height: 1;
+}
+
+@keyframes contentFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* Fade in the content on mount */
+
+.site-content__inner {
+    /* keep your existing rules */
+    animation: contentFadeIn 1.2s ease both;
+}
+
+.client-shell {
+    position: fixed;
+    z-index: 10000;
+    /* above footer/header */
+    background: #111;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+}
+
+
+/* FULLSCREEN MUST BE EDGE-TO-EDGE */
+
+.client-shell.is-full {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+}
+
+
+/* DOCKED bottom-right */
+
+.client-shell.is-dock {
+    right: 18px;
+    bottom: 18px;
+    width: 420px;
+    height: 300px;
+    border: solid 2px var(--secondary-color);
+}
+
+
+/* Controls overlay (top-right) */
+
+.client-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10001;
+    display: flex;
+    gap: 8px;
+}
+
+
+/* Buttons */
+
+.icon-btn {
+    height: 32px;
+    min-width: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(0, 0, 0, .35);
+    color: #fff;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.icon-btn:hover {
+    background: rgba(0, 0, 0, .50);
+}
+
+
+/* Body always fills shell */
+
+.client-body.no-header {
+    width: 100%;
+    height: 100%;
+}
+
+.client-iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+
+/* Minimized restore pill */
+
+.client-restore {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 10000;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-weight: 900;
+    cursor: pointer;
+    background: #222;
+    color: #fff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .35);
+}
+
+.client-bar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    /* split gradient using secondary vars */
+    background: linear-gradient(180deg, var(--secondary-color) 50%, var(--secondary-dark, var(--secondary-color)) 50%);
+    color: var(--on-secondary, #fff);
+    border-bottom: 1px solid rgba(0, 0, 0, .35);
+}
+
+.client-bar__left {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.client-bar__title {
+    font-weight: 900;
+    letter-spacing: .3px;
+}
+
+.client-bar__right {
+    display: flex;
+    gap: 8px;
+}
+
+.client-body,
+.client-iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+
+/* restore button when minimized */
+
+.client-restore {
+    position: fixed;
+    right: 18px;
+    bottom: 74px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    cursor: pointer;
+    background: linear-gradient(180deg, var(--secondary-color) 50%, var(--secondary-dark, var(--secondary-color)) 50%);
+    color: var(--on-secondary, #fff);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+    transition: transform .12s ease, filter .12s ease;
+}
+
+.client-restore:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+}
+
+.client-restore__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, .35);
+}
+
+.client-restore__label {
+    font-weight: 900;
+}
+
+
+/* optional: prevent the fixed footer from overlaying if you use bottom 64px */
+
+.site-footer {
+    height: 52px;
+}
+
+
+/* Generic input to match your style */
+
+.input {
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    background: rgba(0, 0, 0, .25);
+    color: rgba(255, 255, 255, .92);
+    padding: 0 12px;
+    outline: none;
+    min-width: 220px;
+}
+
+.input:disabled {
+    opacity: .7;
+}
+
+
+/* Shine loading effect */
+
+@keyframes shine {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.loading-shine {
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, .06) 0%, rgba(255, 255, 255, .14) 20%, rgba(255, 255, 255, .06) 40%);
+    background-size: 220% 100%;
+    animation: shine 1.2s ease-in-out infinite;
+}
+
+:root {
+    /* use your theme values */
+    --input-bg: rgba(0, 0, 0, 0.25);
+    --input-bg-focus: rgba(0, 0, 0, 0.32);
+    --input-border: rgba(255, 255, 255, 0.10);
+    --input-border-hover: rgba(255, 255, 255, 0.16);
+    --input-border-focus: rgba(255, 255, 255, 0.26);
+    --input-text: rgba(255, 255, 255, 0.92);
+    --input-placeholder: rgba(232, 237, 243, 0.45);
+}
+
+
+/* Apply everywhere (so no more default white inputs) */
+
+input,
+textarea,
+select {
+    background: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border: 1px solid var(--input-border) !important;
+    border-radius: 10px;
+    padding: 10px 12px;
+    outline: none;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+    transition: border-color 140ms ease, background 140ms ease, filter 140ms ease;
+}
+
+
+/* Height for standard inputs/selects */
+
+input,
+select {
+    height: 36px;
+}
+
+
+/* Textareas should not be forced to 36px */
+
+textarea {
+    height: auto;
+    min-height: 90px;
+    resize: vertical;
+    line-height: 1.35;
+}
+
+
+/* Hover + focus */
+
+input:hover,
+textarea:hover,
+select:hover {
+    border-color: var(--input-border-hover) !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    background: var(--input-bg-focus) !important;
+    border-color: var(--input-border-focus) !important;
+    filter: brightness(1.03);
+}
+
+
+/* Placeholder */
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--input-placeholder) !important;
+}
+
+
+/* Disabled */
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+
+/* Make your existing classes match automatically */
+
+.input,
+.atom-input {
+    background: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border: 1px solid var(--input-border) !important;
+    border-radius: 10px;
+}
+
+
+/* Fix Chrome autofill white/yellow flash */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--input-text) !important;
+    transition: background-color 9999s ease-out 0s;
+    box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.25) inset !important;
+    border: 1px solid var(--input-border) !important;
+}
+
+.client-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #222;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.client-bar__title {
+    font-weight: 900;
+    color: #fff;
+}
+
+.client-bar__sub {
+    font-size: 12px;
+    opacity: .75;
+}
+
+.client-body {
+    width: 100%;
+    height: calc(100% - 44px);
+    background: #111;
+}
+
+.client-iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.client-restore {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 9999;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-weight: 900;
+    cursor: pointer;
+    background: #222;
+    color: #fff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .35);
+}
+
+.icon-btn {
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-weight: 900;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, .08);
+}
+
+
+/* Theme menu layout */
+
+.theme-menu {
+    width: 260px;
+    padding: 10px;
+}
+
+.theme-picker--pro {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.theme-picker__box {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.theme-color--big {
+    width: 100%;
+    height: 150px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.theme-hexrow {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.theme-hex--pro {
+    flex: 1;
+}
+
+.theme-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.theme-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.theme-action {
+    flex: 1;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.theme-action--danger {
+    background: rgba(255, 60, 60, 0.18);
+}
+
+.theme-save {
+    width: 100%;
+    border-radius: 10px;
+    font-weight: 900;
+}
+
+.theme-hint {
+    font-size: 12px;
+    opacity: 0.85;
+    text-align: center;
+}
