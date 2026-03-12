@@ -3,38 +3,22 @@ import { pool } from "../db";
 export type BanResult = {
   banned: boolean;
   reason?: string;
-  expiresAt?: string | null; // ISO string or null for permanent
-  bantype?: "user" | "ip" | "machine";
+  expiresAt?: string | null;
+  bantype?: "account" | "ip" | "machine" | "super";
 };
 
-const TYPE_USER = "user";
-const TYPE_IP = "ip";
-const TYPE_MACHINE = "machine";
-
 function parseExpireToIso(expire: any): string | null {
-  if (expire == null) return null;
-
-  // Your schema: expire is double, default 0 => permanent ban
   const n = Number(expire);
   if (!Number.isFinite(n) || n <= 0) return null;
-
-  // Stored as unix seconds
-  const d = new Date(n * 1000);
-  return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+  return new Date(n * 1000).toISOString();
 }
 
-function isStillActive(expiresAtIso: string | null): boolean {
-  // null = permanent
-  if (!expiresAtIso) return true;
-  return new Date(expiresAtIso).getTime() > Date.now();
+function isActive(expire: any): boolean {
+  const n = Number(expire);
+  if (!Number.isFinite(n) || n <= 0) return true;
+  return n > Math.floor(Date.now() / 1000);
 }
 
-/**
- * Checks bans table:
- * - bantype: enum('user','ip','machine')
- * - value: varchar(50) (username or ip or machine id)
- * - expire: double (unix seconds). 0 => permanent
- */
 export async function getBanStatus(opts: {
   userId?: number;
   username?: string;
@@ -42,59 +26,56 @@ export async function getBanStatus(opts: {
   machine?: string;
 }): Promise<BanResult> {
   try {
-    const checks: Array<{ bantype: string; value: string }> = [];
-
-    // Your earlier server log showed bantype='user' and value='Caleb'
-    // So username-based bans are definitely used.
-    if (opts.username)
-      checks.push({ bantype: TYPE_USER, value: String(opts.username) });
-
-    // Some systems also ban by userId in value; keep it as a fallback.
-    if (opts.userId != null)
-      checks.push({ bantype: TYPE_USER, value: String(opts.userId) });
-
-    if (opts.ip) checks.push({ bantype: TYPE_IP, value: String(opts.ip) });
-
-    // Optional: if you track machine fingerprint in your app/emulator
-    if (opts.machine)
-      checks.push({ bantype: TYPE_MACHINE, value: String(opts.machine) });
-
-    if (!checks.length) return { banned: false };
-
     const where: string[] = [];
     const params: any[] = [];
 
-    for (const c of checks) {
-      where.push("(bantype = ? AND value = ?)");
-      params.push(c.bantype, c.value);
+    if (opts.userId != null) {
+      where.push("(type = 'account' AND user_id = ?)");
+      params.push(opts.userId);
+      where.push("(type = 'super' AND user_id = ?)");
+      params.push(opts.userId);
     }
+
+    if (opts.ip) {
+      where.push("(type = 'ip' AND ip = ?)");
+      params.push(opts.ip);
+      where.push("(type = 'super' AND ip = ?)");
+      params.push(opts.ip);
+    }
+
+    if (opts.machine) {
+      where.push("(type = 'machine' AND machine_id = ?)");
+      params.push(opts.machine);
+      where.push("(type = 'super' AND machine_id = ?)");
+      params.push(opts.machine);
+    }
+
+    if (!where.length) return { banned: false };
 
     const [rows] = await (pool as any).query(
       `
-SELECT bantype, reason, expire
-FROM bans
-WHERE (${where.join(" OR ")})
-ORDER BY id DESC
-LIMIT 25
-`,
+      SELECT type, ban_reason, ban_expire
+      FROM bans
+      WHERE ${where.join(" OR ")}
+      ORDER BY id DESC
+      LIMIT 25
+      `,
       params,
     );
 
-    for (const r of (rows as any[]) || []) {
-      const expiresAt = parseExpireToIso(r.expire);
-      if (!isStillActive(expiresAt)) continue;
+    for (const row of (rows as any[]) || []) {
+      if (!isActive(row.ban_expire)) continue;
 
       return {
         banned: true,
-        bantype: String(r.bantype) as any,
-        reason: r.reason || "You are banned.",
-        expiresAt,
+        bantype: String(row.type) as any,
+        reason: String(row.ban_reason || "You are banned."),
+        expiresAt: parseExpireToIso(row.ban_expire),
       };
     }
 
     return { banned: false };
   } catch (err) {
-    // Fail-open so ban lookup can never take down login (no more 500s).
     console.error("[ban] getBanStatus failed:", err);
     return { banned: false };
   }

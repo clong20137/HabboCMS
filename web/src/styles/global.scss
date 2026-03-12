@@ -1244,3 +1244,132 @@ select:-webkit-autofill:focus {
     opacity: 0.85;
     text-align: center;
 }
+
+.theme-menu {
+    width: 280px;
+}
+
+.theme-picker-v2-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 6px 6px;
+}
+
+.theme-picker-v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.theme-picker-v2__area {
+    position: relative;
+    height: 180px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    cursor: crosshair;
+}
+
+.theme-picker-v2__white,
+.theme-picker-v2__black {
+    position: absolute;
+    inset: 0;
+}
+
+.theme-picker-v2__white {
+    background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.theme-picker-v2__black {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, #000 100%);
+}
+
+.theme-picker-v2__area-thumb,
+.theme-picker-v2__hue-thumb {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 3px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 4px 10px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.theme-picker-v2__hue {
+    position: relative;
+    height: 22px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(90deg, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+    cursor: ew-resize;
+}
+
+.theme-picker-v2__hue-thumb {
+    top: 50%;
+    background: transparent;
+}
+
+.theme-hexrow--v2 {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.theme-hint {
+    font-size: 12px;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.news-comment-toolbar {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.news-emoji-popover {
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.news-hero-img--empty,
+.recent-thumb__empty {
+    width: 100%;
+    height: 100%;
+    min-height: 120px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+}
+
+.comment-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.react-btn--picker {
+    white-space: nowrap;
+}
+
+.news-comment-pagination {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.news-comment-list {
+    margin-top: 14px;
+}
+
+.news-comment-box {
+    position: relative;
+}

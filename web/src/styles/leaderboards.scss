@@ -1,13 +1,9 @@
-/* =========================
-LEADERBOARDS
-========================= */
-
 .leaderboards-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
     position: relative;
 }
-
-
-/* Always 3 columns when there are 3 cards visible */
 
 .leaderboards-grid--3 {
     display: grid;
@@ -35,6 +31,12 @@ LEADERBOARDS
     gap: 10px;
     font-weight: 950;
     letter-spacing: 0.6px;
+}
+
+.leaderboard-head__iconImg {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
 }
 
 .leaderboard-body {
@@ -98,7 +100,7 @@ LEADERBOARDS
     font-weight: 950;
     color: rgba(255, 255, 255, 0.95);
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .lb-avatar {
@@ -106,7 +108,7 @@ LEADERBOARDS
     height: 54px;
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .lb-meta {
@@ -119,21 +121,21 @@ LEADERBOARDS
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: #FFF;
+    color: #fff;
 }
 
 .lb-sub {
     margin-top: 4px;
     font-weight: 750;
-    font-size: 13px;
-    color: #FFF;
+    font-size: 16px;
+    color: #fff;
 }
 
 .lb-right {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    color: #FFF;
+    color: #fff;
 }
 
 .lb-value {
@@ -142,11 +144,12 @@ LEADERBOARDS
 }
 
 
-/* TOP 3: GOLD / SILVER / BRONZE */
+/* TOP 3 */
 
 .leaderboard-row.is-gold {
-    background: #c39513;
+    position: relative;
     overflow: hidden;
+    background: #c39513;
 }
 
 .leaderboard-row.is-silver {
@@ -163,7 +166,7 @@ LEADERBOARDS
 }
 
 .leaderboard-row.is-silver .lb-rank {
-    background: rgba(215, 225, 235, 0.20);
+    background: rgba(215, 225, 235, 0.2);
     border-color: rgba(215, 225, 235, 0.34);
 }
 
@@ -173,17 +176,7 @@ LEADERBOARDS
 }
 
 
-/* =========================
-CLEAN GOLD SPARKLE (NO GRAIN)
-========================= */
-
-.leaderboard-row.is-gold {
-    position: relative;
-    overflow: hidden;
-}
-
-
-/* subtle shimmer sweep */
+/* GOLD SHIMMER */
 
 .leaderboard-row.is-gold::before {
     content: "";
@@ -196,21 +189,15 @@ CLEAN GOLD SPARKLE (NO GRAIN)
     opacity: 0.7;
 }
 
-
-/* sparkles (few, clean, twinkle) */
-
 .leaderboard-row.is-gold::after {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(circle at 18% 35%, rgba(255, 255, 255, .95) 0 2px, transparent 3px), radial-gradient(circle at 35% 60%, rgba(255, 255, 255, .75) 0 1.5px, transparent 3px), radial-gradient(circle at 52% 28%, rgba(255, 255, 255, .90) 0 2px, transparent 3px), radial-gradient(circle at 72% 42%, rgba(255, 255, 255, .80) 0 1.5px, transparent 3px), radial-gradient(circle at 86% 30%, rgba(255, 255, 255, .95) 0 2px, transparent 3px), radial-gradient(circle at 78% 70%, rgba(255, 255, 255, .75) 0 1.5px, transparent 3px);
+    background: radial-gradient(circle at 18% 35%, rgba(255, 255, 255, 0.95) 0 2px, transparent 3px), radial-gradient(circle at 35% 60%, rgba(255, 255, 255, 0.75) 0 1.5px, transparent 3px), radial-gradient(circle at 52% 28%, rgba(255, 255, 255, 0.9) 0 2px, transparent 3px), radial-gradient(circle at 72% 42%, rgba(255, 255, 255, 0.8) 0 1.5px, transparent 3px), radial-gradient(circle at 86% 30%, rgba(255, 255, 255, 0.95) 0 2px, transparent 3px), radial-gradient(circle at 78% 70%, rgba(255, 255, 255, 0.75) 0 1.5px, transparent 3px);
     opacity: 0.55;
     animation: goldTwinkle 1.6s ease-in-out infinite alternate;
 }
-
-
-/* keep content above sparkle layers */
 
 .leaderboard-row.is-gold>* {
     position: relative;
@@ -237,7 +224,7 @@ CLEAN GOLD SPARKLE (NO GRAIN)
 @keyframes goldTwinkle {
     0% {
         opacity: 0.25;
-        filter: blur(0px);
+        filter: blur(0);
     }
     100% {
         opacity: 0.7;
@@ -253,77 +240,78 @@ CLEAN GOLD SPARKLE (NO GRAIN)
 }
 
 
-/* =========================
-DOTS / PAGER
-========================= */
-
-.leaderboards-dots {
-    margin-top: 18px;
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-}
-
-.lb-dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    background: rgba(255, 255, 255, 0.06);
-    cursor: pointer;
-    transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
-}
-
-.lb-dot:hover {
-    transform: translateY(-1px);
-    border-color: rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.10);
-}
-
-
-/* active dot matches theme primary */
-
-.lb-dot.active {
-    width: 34px;
-    /* pill like your ref */
-    background: linear-gradient(180deg, var(--primary-color) 50%, var(--primary-dark) 50%);
-    border-color: rgba(255, 255, 255, 0.20);
-}
+/* CROSSFADE */
 
 .lb-xfade-stage {
     position: relative;
 }
 
 .lb-xfade-layer {
+    width: 100%;
+}
+
+.lb-xfade-layer+.lb-xfade-layer {
     position: absolute;
     inset: 0;
 }
 
-.lb-xfade-page {
-    position: absolute;
-    inset: 0;
-    opacity: 1;
-    transition: opacity var(--xfade-ms, 420ms) ease-in-out;
+
+/* NAV */
+
+.leaderboards-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 8px;
+    margin-bottom: 12px;
 }
 
-.lb-xfade-page--current.is-fading-out {
-    opacity: 0;
+.lb-nav-btn {
+    min-width: 38px;
+    height: 38px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(10, 18, 30, 0.88);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
 }
 
-.lb-xfade-page--next {
-    opacity: 0;
+.lb-nav-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: rgba(18, 28, 44, 0.96);
 }
 
-.lb-xfade-page--next.is-prep {
-    opacity: 0;
+.lb-nav-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
 }
 
-.lb-xfade-page--next.is-fading-in {
-    opacity: 1;
+.leaderboards-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
-.leaderboard-head__iconImg {
-    width: 22px;
-    height: 22px;
-    object-fit: contain;
+.lb-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    border: 0;
+    background: rgba(255, 255, 255, 0.28);
+    cursor: pointer;
+    transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.lb-dot:hover {
+    transform: scale(1.08);
+}
+
+.lb-dot.active {
+    background: #f3be3f;
+    box-shadow: 0 0 0 3px rgba(243, 190, 63, 0.18);
 }

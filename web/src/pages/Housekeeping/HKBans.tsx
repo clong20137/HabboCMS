@@ -1,16 +1,50 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { hkRequest } from "../../api/hkApi";
 
+type BanKind = "account" | "ip" | "machine";
+
 type BanRow = {
 id: number;
-bantype: "user" | "ip" | "machine";
-value: string;
+bantype: BanKind;
+value?: string;
+user_id?: number | null;
+ip?: string | null;
+machine_id?: string | null;
 reason: string;
 expire: number; // unix seconds, 0 = permanent
-added_by: string;
+added_by?: string;
 added_date: number; // unix seconds
-appeal_state: "0" | "1" | "2";
+appeal_state?: "0" | "1" | "2";
 };
+
+const BAN_DURATION_OPTIONS = [
+  { label: "2 hours", value: 2 * 60 * 60 },
+  { label: "6 hours", value: 6 * 60 * 60 },
+  { label: "12 hours", value: 12 * 60 * 60 },
+  { label: "24 hours", value: 24 * 60 * 60 },
+  { label: "3 days", value: 3 * 24 * 60 * 60 },
+  { label: "1 week", value: 7 * 24 * 60 * 60 },
+  { label: "1 month", value: 30 * 24 * 60 * 60 },
+  { label: "6 months", value: 180 * 24 * 60 * 60 },
+  { label: "1 year", value: 365 * 24 * 60 * 60 },
+] as const;
+
+function getBanValue(row: BanRow) {
+  if (row.bantype === "account") return row.value || String(row.user_id || "");
+  if (row.bantype === "ip") return row.value || String(row.ip || "");
+  return row.value || String(row.machine_id || "");
+}
+
+function getCreatePayload(type: BanKind, rawValue: string) {
+  const value = rawValue.trim();
+  if (type === "account") {
+    return { bantype: "account" as const, user_id: Number(value) };
+  }
+  if (type === "ip") {
+    return { bantype: "ip" as const, ip: value };
+  }
+  return { bantype: "machine" as const, machine_id: value };
+}
 
 function fmtDate(unix: number) {
 if (!unix) return "—";
@@ -34,13 +68,13 @@ const [items, setItems] = useState<BanRow[]>([]);
 const [error, setError] = useState("");
 
 const [q, setQ] = useState("");
-const [bantype, setBantype] = useState<"" | "user" | "ip" | "machine">("");
+const [bantype, setBantype] = useState<"" | BanKind>("");
 
 // Create form
-const [newType, setNewType] = useState<"user" | "ip" | "machine">("user");
+const [newType, setNewType] = useState<BanKind>("account");
 const [newValue, setNewValue] = useState("");
 const [newReason, setNewReason] = useState("");
-const [newDuration, setNewDuration] = useState<number>(3600); // 1 hour
+const [newDuration, setNewDuration] = useState<number>(BAN_DURATION_OPTIONS[0].value);
 const [newPermanent, setNewPermanent] = useState(false);
 const [busy, setBusy] = useState(false);
 
@@ -49,7 +83,7 @@ const [editOpen, setEditOpen] = useState(false);
 const [editRow, setEditRow] = useState<BanRow | null>(null);
 const [editReason, setEditReason] = useState("");
 const [editPermanent, setEditPermanent] = useState(false);
-const [editDuration, setEditDuration] = useState<number>(3600);
+const [editDuration, setEditDuration] = useState<number>(BAN_DURATION_OPTIONS[0].value);
 const [editAppeal, setEditAppeal] = useState<"0" | "1" | "2">("0");
 
 async function load() {
@@ -92,8 +126,7 @@ try {
 await hkRequest(`/hk/bans`, {
 method: "POST",
 body: JSON.stringify({
-bantype: newType,
-value: newValue.trim(),
+...getCreatePayload(newType, newValue),
 reason: newReason.trim(),
 permanent: newPermanent,
 durationSeconds: newPermanent ? undefined : Number(newDuration || 0),
@@ -102,7 +135,7 @@ durationSeconds: newPermanent ? undefined : Number(newDuration || 0),
 
 setNewValue("");
 setNewReason("");
-setNewDuration(3600);
+setNewDuration(BAN_DURATION_OPTIONS[0].value);
 setNewPermanent(false);
 
 await load();
@@ -117,7 +150,7 @@ function openEdit(row: BanRow) {
 setEditRow(row);
 setEditReason(row.reason || "");
 setEditPermanent(!row.expire);
-setEditDuration(3600);
+setEditDuration(BAN_DURATION_OPTIONS[0].value);
 setEditAppeal(row.appeal_state || "0");
 setEditOpen(true);
 }
@@ -152,7 +185,7 @@ setBusy(false);
 }
 
 async function deleteBan(row: BanRow) {
-const yes = confirm(`Delete ban #${row.id} (${row.bantype}:${row.value})?`);
+const yes = confirm(`Delete ban #${row.id} (${row.bantype}:${getBanValue(row)})?`);
 if (!yes) return;
 
 setBusy(true);
@@ -189,7 +222,7 @@ value={bantype}
 onChange={(e) => setBantype(e.target.value as any)}
 >
 <option value="">All types</option>
-<option value="user">User</option>
+<option value="account">Account</option>
 <option value="ip">IP</option>
 <option value="machine">Machine</option>
 </select>
@@ -217,7 +250,7 @@ className="atom-input"
 value={newType}
 onChange={(e) => setNewType(e.target.value as any)}
 >
-<option value="user">User</option>
+<option value="account">Account</option>
 <option value="ip">IP</option>
 <option value="machine">Machine</option>
 </select>
@@ -225,7 +258,7 @@ onChange={(e) => setNewType(e.target.value as any)}
 <input
 className="atom-input"
 style={{ minWidth: 200 }}
-placeholder="Value (username / ip / machine id)"
+placeholder="Value (user id / ip / machine id)"
 value={newValue}
 onChange={(e) => setNewValue(e.target.value)}
 />
@@ -248,18 +281,16 @@ Permanent
 </label>
 
 {!newPermanent && (
-<input
+<select
 className="atom-input"
-type="number"
-min={60}
-max={60 * 60 * 24 * 365 * 5}
-step={60}
 value={newDuration}
 onChange={(e) => setNewDuration(Number(e.target.value))}
-placeholder="Duration (seconds)"
-title="Duration in seconds"
 style={{ width: 180 }}
-/>
+>
+{BAN_DURATION_OPTIONS.map((option) => (
+<option key={option.value} value={option.value}>{option.label}</option>
+))}
+</select>
 )}
 
 <button className="btn btn-primary" onClick={createBan} disabled={busy}>
@@ -301,16 +332,16 @@ const active = isActive(Number(r.expire));
 return (
 <tr key={r.id} style={{ opacity: active ? 1 : 0.6 }}>
 <td>{r.id}</td>
-<td>{r.bantype}</td>
+<td>{r.bantype === "account" ? "account" : r.bantype}</td>
 <td>
-<b>{r.value}</b>
+<b>{getBanValue(r)}</b>
 </td>
 <td style={{ maxWidth: 420, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
 {r.reason}
 </td>
 <td>{fmtExpire(Number(r.expire))}</td>
 <td>{fmtDate(Number(r.added_date))}</td>
-<td>{r.added_by}</td>
+<td>{r.added_by || "—"}</td>
 <td>{r.appeal_state}</td>
 <td style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
 <button className="btn" onClick={() => openEdit(r)} disabled={busy}>
@@ -332,7 +363,7 @@ Delete
 <div className="panel" style={{ marginTop: 14 }}>
 <div className="panel-head">
 <div className="panel-title">
-Edit Ban #{editRow.id} ({editRow.bantype}:{editRow.value})
+Edit Ban #{editRow.id} ({editRow.bantype}:{getBanValue(editRow)})
 </div>
 </div>
 <div className="panel-body">
@@ -355,17 +386,16 @@ Permanent
 </label>
 
 {!editPermanent && (
-<input
+<select
 className="atom-input"
-type="number"
-min={60}
-max={60 * 60 * 24 * 365 * 5}
-step={60}
 value={editDuration}
 onChange={(e) => setEditDuration(Number(e.target.value))}
-placeholder="Reset duration (seconds)"
 style={{ width: 220 }}
-/>
+>
+{BAN_DURATION_OPTIONS.map((option) => (
+<option key={option.value} value={option.value}>{option.label}</option>
+))}
+</select>
 )}
 
 <select

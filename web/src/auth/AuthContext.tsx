@@ -7,6 +7,19 @@ import React, {
 } from "react";
 import { api } from "../api/client";
 
+export type UserCorporation = {
+  id: number;
+  name: string;
+  icon?: string | null;
+  canWorkAnywhere?: boolean;
+  rankId?: number | null;
+  rankName?: string | null;
+  rankOrder?: number | null;
+  isManager?: boolean;
+  weeklyShifts?: number;
+  totalShifts?: number;
+};
+
 export type User = {
   id: number;
   username: string;
@@ -20,6 +33,7 @@ export type User = {
 
   credits?: number;
   bank_amount?: number;
+  bank_credits?: number;
   kd?: number;
 
   kills?: number;
@@ -30,6 +44,9 @@ export type User = {
   arrests_amount?: number;
   damage_dealt?: number;
   damage_received?: number;
+
+  level?: number;
+  corporation?: UserCorporation | null;
 };
 
 type AuthCtx = {
@@ -42,19 +59,42 @@ type AuthCtx = {
 const Ctx = createContext<AuthCtx | null>(null);
 
 function normalizeUser(u: any): User {
+  const corporation = u?.corporation
+    ? {
+        id: Number(u.corporation.id ?? 0),
+        name: String(u.corporation.name ?? ""),
+        icon: u.corporation.icon ?? null,
+        canWorkAnywhere: Boolean(u.corporation.canWorkAnywhere),
+        rankId:
+          u.corporation.rankId != null ? Number(u.corporation.rankId) : null,
+        rankName: u.corporation.rankName ?? null,
+        rankOrder:
+          u.corporation.rankOrder != null ? Number(u.corporation.rankOrder) : null,
+        isManager: Boolean(u.corporation.isManager),
+        weeklyShifts: Number(u.corporation.weeklyShifts ?? 0),
+        totalShifts: Number(u.corporation.totalShifts ?? 0),
+      }
+    : null;
+
   return {
     id: Number(u?.id ?? 0),
     username: String(u?.username ?? ""),
     mail: u?.mail ?? null,
-    rank: u?.rank ?? 0,
+    rank: u?.rank != null ? Number(u.rank) : 0,
 
-    health: Number(u?.health ?? 0),
+    health: Number(u?.health ?? u?.current_health ?? 0),
     maxHealth: Number(u?.maxHealth ?? u?.max_health ?? 0),
     energy: Number(u?.energy ?? 0),
     maxEnergy: Number(u?.maxEnergy ?? u?.max_energy ?? 0),
 
     credits: u?.credits != null ? Number(u.credits) : undefined,
-    bank_amount: u?.bank_amount != null ? Number(u.bank_amount) : undefined,
+    bank_amount:
+      u?.bank_amount != null
+        ? Number(u.bank_amount)
+        : u?.bank_credits != null
+          ? Number(u.bank_credits)
+          : undefined,
+    bank_credits: u?.bank_credits != null ? Number(u.bank_credits) : undefined,
     kd: u?.kd != null ? Number(u.kd) : undefined,
 
     kills: u?.kills != null ? Number(u.kills) : undefined,
@@ -69,6 +109,9 @@ function normalizeUser(u: any): User {
     damage_dealt: u?.damage_dealt != null ? Number(u.damage_dealt) : undefined,
     damage_received:
       u?.damage_received != null ? Number(u.damage_received) : undefined,
+
+    level: u?.level != null ? Number(u.level) : 0,
+    corporation,
   };
 }
 
@@ -95,17 +138,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // bootstrap session
   useEffect(() => {
     refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ If global client dispatches "auth:banned", clear session immediately
   useEffect(() => {
     const onBanned = () => {
       setUser(null);
-      // best-effort server cookie clear (don’t await in event handler)
       api.logout().catch(() => {});
     };
 
@@ -113,7 +152,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("auth:banned", onBanned as any);
   }, []);
 
-  // ✅ Heartbeat (ASAP kick) — only when logged in
   useEffect(() => {
     if (!user) return;
 
@@ -122,7 +160,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, 12000);
 
     return () => window.clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const value = useMemo(

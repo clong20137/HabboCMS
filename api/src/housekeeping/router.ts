@@ -32,28 +32,31 @@ hkRouter.get("/me", (req, res) => {
 BANS (HOUSEKEEPING ADMIN)
 Table: bans
 - id (int)
-- bantype enum('user','ip','machine')
-- value varchar(50)
-- reason text
-- expire double (unix seconds). 0 = permanent
-- added_by varchar(45)
-- added_date int (unix seconds)
-- appeal_state enum('0','1','2')
+- user_id int
+- ip varchar(50)
+- machine_id varchar(255)
+- user_staff_id int
+- timestamp int
+- ban_expire int (unix seconds). 0 = permanent
+- ban_reason varchar(200)
+- type enum('account','ip','machine','super')
+- cfh_topic int
 ========================= */
 
 type BanRow = RowDataPacket & {
   id: number;
-  bantype: "user" | "ip" | "machine";
-  value: string;
-  reason: string;
-  expire: any; // numeric-ish
-  added_by: string;
-  added_date: any; // unix seconds
-  appeal_state: "0" | "1" | "2";
+  type: "account" | "ip" | "machine" | "super";
+  user_id: number | null;
+  ip: string | null;
+  machine_id: string | null;
+  user_staff_id: number | null;
+  ban_reason: string;
+  ban_expire: any;
+  timestamp: any;
+  cfh_topic: number | null;
 };
 
-const BAN_TYPES = new Set(["user", "ip", "machine"]);
-const APPEAL_STATES = new Set(["0", "1", "2"]);
+const BAN_TYPES = new Set(["account", "ip", "machine", "super"]);
 
 function toUnixSecondsNow() {
   return Math.floor(Date.now() / 1000);
@@ -65,7 +68,7 @@ function numOr0(v: any) {
 }
 
 // LIST
-// GET /api/hk/bans?q=caleb&bantype=user&active=1&limit=50&offset=0
+// GET /api/hk/bans?q=caleb&bantype=account&active=1&limit=50&offset=0
 hkRouter.get("/bans", requireHKPermission("hk.bans.view"), async (req, res) => {
   try {
     const q = String(req.query.q ?? "").trim();
@@ -89,19 +92,17 @@ hkRouter.get("/bans", requireHKPermission("hk.bans.view"), async (req, res) => {
       if (!BAN_TYPES.has(bantype)) {
         return res.status(400).json({ error: "Invalid bantype." });
       }
-      wheres.push("bantype = ?");
+      wheres.push("type = ?");
       params.push(bantype);
     }
 
     if (q) {
-      // value can be username/userId/ip/machine, reason searchable too
-      wheres.push("(value LIKE ? OR reason LIKE ? OR added_by LIKE ?)");
-      params.push(`%${q}%`, `%${q}%`, `%${q}%`);
+      wheres.push("(CAST(user_id AS CHAR) LIKE ? OR ip LIKE ? OR machine_id LIKE ? OR ban_reason LIKE ?)");
+      params.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
     }
 
     if (active === "1") {
-      // active if expire = 0 OR expire > now
-      wheres.push("(expire = 0 OR expire > ?)");
+      wheres.push("(ban_expire = 0 OR ban_expire > ?)");
       params.push(toUnixSecondsNow());
     }
 
@@ -109,7 +110,7 @@ hkRouter.get("/bans", requireHKPermission("hk.bans.view"), async (req, res) => {
 
     const [rows] = await pool.query<BanRow[]>(
       `
-SELECT id, bantype, value, reason, expire, added_by, added_date, appeal_state
+SELECT id, type, user_id, ip, machine_id, user_staff_id, timestamp, ban_expire, ban_reason, cfh_topic
 FROM bans
 ${whereSql}
 ORDER BY id DESC
@@ -135,13 +136,15 @@ ${whereSql}
       total,
       items: (rows as any[]).map((r) => ({
         id: Number(r.id),
-        bantype: String(r.bantype),
-        value: String(r.value ?? ""),
-        reason: String(r.reason ?? ""),
-        expire: numOr0(r.expire), // unix seconds, 0=perm
-        added_by: String(r.added_by ?? ""),
-        added_date: numOr0(r.added_date),
-        appeal_state: String(r.appeal_state ?? "0"),
+        bantype: String(r.type),
+        user_id: r.user_id == null ? null : Number(r.user_id),
+        ip: r.ip == null ? null : String(r.ip),
+        machine_id: r.machine_id == null ? null : String(r.machine_id),
+        user_staff_id: r.user_staff_id == null ? null : Number(r.user_staff_id),
+        reason: String(r.ban_reason ?? ""),
+        expire: numOr0(r.ban_expire),
+        added_date: numOr0(r.timestamp),
+        cfh_topic: r.cfh_topic == null ? null : Number(r.cfh_topic),
       })),
     });
   } catch (e: any) {
@@ -151,7 +154,7 @@ ${whereSql}
 });
 
 // CREATE
-// POST /api/hk/bans { bantype, value, reason, permanent?:true, durationSeconds?:3600 }
+// POST /api/hk/bans { bantype, user_id?, ip?, machine_id?, reason, permanent?:true, durationSeconds?:3600 }
 hkRouter.post(
   "/bans",
   requireHKPermission("hk.bans.edit"),
@@ -161,7 +164,9 @@ hkRouter.post(
       const bantype = String(req.body?.bantype ?? "")
         .trim()
         .toLowerCase();
-      const value = String(req.body?.value ?? "").trim();
+      const userId = req.body?.user_id == null ? null : Number(req.body?.user_id);
+      const ip = req.body?.ip == null ? null : String(req.body?.ip).trim();
+      const machineId = req.body?.machine_id == null ? null : String(req.body?.machine_id).trim();
       const reason = String(req.body?.reason ?? "").trim();
 
       const permanent = Boolean(req.body?.permanent);
@@ -170,8 +175,17 @@ hkRouter.post(
       if (!BAN_TYPES.has(bantype)) {
         return res.status(400).json({ error: "Invalid bantype." });
       }
-      if (!value || value.length > 50) {
-        return res.status(400).json({ error: "Value is required (max 50)." });
+      if (bantype === "account" && !userId) {
+        return res.status(400).json({ error: "user_id is required for account bans." });
+      }
+      if (bantype === "ip" && !ip) {
+        return res.status(400).json({ error: "ip is required for ip bans." });
+      }
+      if (bantype === "machine" && !machineId) {
+        return res.status(400).json({ error: "machine_id is required for machine bans." });
+      }
+      if (bantype === "super" && !userId && !ip && !machineId) {
+        return res.status(400).json({ error: "Provide at least one target for a super ban." });
       }
       if (!reason || reason.length > 2000) {
         return res
@@ -197,10 +211,10 @@ hkRouter.post(
 
       const [result] = await pool.query<ResultSetHeader>(
         `
-INSERT INTO bans (bantype, value, reason, expire, added_by, added_date, appeal_state)
-VALUES (?, ?, ?, ?, ?, ?, '0')
+INSERT INTO bans (user_id, ip, machine_id, user_staff_id, timestamp, ban_expire, ban_reason, type, cfh_topic)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, -1)
 `,
-        [bantype, value, reason, expire, actor.username, now],
+        [userId, ip, machineId, actor.id, now, expire, reason, bantype],
       );
 
       const id = Number(result.insertId || 0);
@@ -208,8 +222,8 @@ VALUES (?, ?, ?, ?, ?, ?, '0')
       await hkAudit(req, {
         action: "bans.create",
         targetType: "ban",
-        targetId: id || value,
-        details: { bantype, value, expire, permanent: expire === 0 },
+        targetId: id || userId || ip || machineId || bantype,
+        details: { bantype, userId, ip, machineId, expire, permanent: expire === 0 },
       });
 
       return res.json({ ok: true, id });
@@ -248,14 +262,8 @@ hkRouter.put(
           ? undefined
           : Number(durationSecondsRaw);
 
-      const appealStateRaw = req.body?.appeal_state;
-      const appeal_state =
-        appealStateRaw === undefined
-          ? undefined
-          : String(appealStateRaw).trim();
-
       const [existingRows] = await pool.query<RowDataPacket[]>(
-        "SELECT id, bantype, value, expire FROM bans WHERE id = ? LIMIT 1",
+        "SELECT id, type, user_id, ip, machine_id, ban_expire FROM bans WHERE id = ? LIMIT 1",
         [id],
       );
       if (!existingRows.length) {
@@ -271,21 +279,13 @@ hkRouter.put(
             .status(400)
             .json({ error: "Reason is required (max 2000)." });
         }
-        updates.push("reason = ?");
+        updates.push("ban_reason = ?");
         params.push(reason);
-      }
-
-      if (appeal_state !== undefined) {
-        if (!APPEAL_STATES.has(appeal_state)) {
-          return res.status(400).json({ error: "Invalid appeal_state." });
-        }
-        updates.push("appeal_state = ?");
-        params.push(appeal_state);
       }
 
       // Expiry logic
       if (permanent === true) {
-        updates.push("expire = 0");
+        updates.push("ban_expire = 0");
       } else if (durationSeconds !== undefined) {
         if (!Number.isFinite(durationSeconds) || durationSeconds < 60) {
           return res
@@ -293,7 +293,7 @@ hkRouter.put(
             .json({ error: "durationSeconds must be >= 60." });
         }
         const now = toUnixSecondsNow();
-        updates.push("expire = ?");
+        updates.push("ban_expire = ?");
         params.push(now + Math.floor(durationSeconds));
       }
 

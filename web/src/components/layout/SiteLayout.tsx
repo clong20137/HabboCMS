@@ -19,65 +19,31 @@ import navEdit from "../../assets/navigation/edit.png";
 // Dropdown icons
 import ticketsIcon from "../../assets/navigation/tickets.png";
 import logoutIcon from "../../assets/navigation/logout.gif";
+import InlineColorPicker from "../theme/InlineColorPicker";
+import {
+  DEFAULT_THEME,
+  ThemeState,
+  darken,
+  isValidHex,
+  normalizeTheme,
+  readableText,
+} from "../../theme/themeUtils";
 
 type Props = PropsWithChildren<{
   active?: "home" | "community" | "store" | "me" | "support";
 }>;
 
 type OpenMenu = null | "community" | "account" | "theme";
-type ThemeTab = "primary" | "secondary" | "footer";
-
-type ThemeState = {
-  primary: string;
-  secondary: string;
-  footer: string;
-};
+type ThemeTab = "primary" | "secondary";
 
 const THEME_KEY = "plus_theme_v1";
-
-const clamp = (n: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, n));
-
-function hexToRgb(hex: string) {
-  const h = hex.replace("#", "").trim();
-  if (h.length !== 6) return null;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  if ([r, g, b].some((x) => Number.isNaN(x))) return null;
-  return { r, g, b };
-}
-
-function rgbToHex(r: number, g: number, b: number) {
-  const to = (x: number) =>
-    clamp(Math.round(x), 0, 255).toString(16).padStart(2, "0");
-  return `#${to(r)}${to(g)}${to(b)}`;
-}
-
-function darken(hex: string, pct: number) {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return hex;
-  const f = 1 - clamp(pct, 0, 0.9);
-  return rgbToHex(rgb.r * f, rgb.g * f, rgb.b * f);
-}
-
-function readableText(hex: string) {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return "#ffffff";
-  const srgb = [rgb.r, rgb.g, rgb.b].map((v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  });
-  const L = 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
-  return L > 0.55 ? "#0b0f14" : "#ffffff";
-}
 
 function applyThemeVars(t: ThemeState) {
   const root = document.documentElement;
 
-  const themePrimary = t.primary || "#6f7b86";
-  const themeSecondary = t.secondary || "#2a2f36";
-  const footer = t.footer || "#1b2026";
+  const themePrimary = t.primary || DEFAULT_THEME.primary;
+  const themeSecondary = t.secondary || DEFAULT_THEME.secondary;
+  const footer = themePrimary;
 
   const primary = themeSecondary; // headers/buttons/etc
   const secondary = themePrimary; // everything else
@@ -99,23 +65,14 @@ function loadTheme(): ThemeState {
   try {
     const raw = localStorage.getItem(THEME_KEY);
     if (!raw) throw new Error("no theme");
-    const parsed = JSON.parse(raw);
-    return {
-      primary: String(parsed.primary || "#6f7b86"),
-      secondary: String(parsed.secondary || "#2a2f36"),
-      footer: String(parsed.footer || "#1b2026"),
-    };
+    return normalizeTheme(JSON.parse(raw));
   } catch {
-    return { primary: "#6f7b86", secondary: "#2a2f36", footer: "#1b2026" };
+    return DEFAULT_THEME;
   }
 }
 
 function saveTheme(t: ThemeState) {
-  localStorage.setItem(THEME_KEY, JSON.stringify(t));
-}
-
-function isValidHex(v: string) {
-  return /^#([0-9a-fA-F]{6})$/.test(String(v || "").trim());
+  localStorage.setItem(THEME_KEY, JSON.stringify(normalizeTheme(t)));
 }
 
 export default function SiteLayout({ children, active = "home" }: Props) {
@@ -128,9 +85,6 @@ export default function SiteLayout({ children, active = "home" }: Props) {
 
   const [theme, setTheme] = useState<ThemeState>(() => loadTheme());
   const [themeTab, setThemeTab] = useState<ThemeTab>("primary");
-
-  // draft values (so you can hit “Save Colors” like the screenshot)
-  const [draft, setDraft] = useState<ThemeState>(() => loadTheme());
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
@@ -191,40 +145,42 @@ export default function SiteLayout({ children, active = "home" }: Props) {
     if (!isLoggedIn && name === "account") return;
     setOpenMenu((prev) => (prev === name ? null : name));
 
-    // when opening theme menu, sync draft to current saved theme
-    if (name === "theme") setDraft(theme);
   }
 
-  const activeKey: keyof ThemeState =
-    themeTab === "primary"
-      ? "primary"
-      : themeTab === "secondary"
-        ? "secondary"
-        : "footer";
+  const activeKey: "primary" | "secondary" =
+    themeTab === "primary" ? "primary" : "secondary";
 
-  function setDraftValue(key: keyof ThemeState, value: string) {
+  function updateThemeValue(key: "primary" | "secondary", value: string) {
     const v = String(value || "").trim();
-
-    // allow typing partials in hex input, but only commit to color picker if valid
-    setDraft((prev) => ({ ...prev, [key]: v }));
+    setTheme((prev) =>
+      normalizeTheme({
+        ...prev,
+        [key]: isValidHex(v) ? v : prev[key],
+      }),
+    );
   }
 
-  function applySaved() {
-    // sanitize
-    const next: ThemeState = {
-      primary: isValidHex(draft.primary) ? draft.primary : "#6f7b86",
-      secondary: isValidHex(draft.secondary) ? draft.secondary : "#2a2f36",
-      footer: isValidHex(draft.footer) ? draft.footer : "#1b2026",
-    };
-    setTheme(next);
+  function updateThemeHex(key: "primary" | "secondary", value: string) {
+    const v = String(value || "").trim();
+    if (!v) return;
+
+    if (!v.startsWith("#")) {
+      const candidate = `#${v.replace(/^#+/, "")}`;
+      if (isValidHex(candidate)) {
+        updateThemeValue(key, candidate);
+      }
+      return;
+    }
+
+    if (isValidHex(v)) updateThemeValue(key, v);
   }
 
   function resetToSaved() {
-    setDraft(loadTheme());
+    setTheme(loadTheme());
   }
 
   function resetDefault() {
-    setDraft({ primary: "#6f7b86", secondary: "#2a2f36", footer: "#1b2026" });
+    setTheme(DEFAULT_THEME);
   }
 
   return (
@@ -334,7 +290,6 @@ export default function SiteLayout({ children, active = "home" }: Props) {
                 className="dropdown-menu dropdown-menu--right theme-menu"
                 role="menu"
               >
-                {/* Tabs like screenshot */}
                 <div className="theme-tabs">
                   <button
                     className={`theme-tab ${themeTab === "primary" ? "active" : ""}`}
@@ -350,57 +305,34 @@ export default function SiteLayout({ children, active = "home" }: Props) {
                   >
                     Secondary
                   </button>
-                  <button
-                    className={`theme-tab ${themeTab === "footer" ? "active" : ""}`}
-                    onClick={() => setThemeTab("footer")}
-                    type="button"
-                  >
-                    Footer
-                  </button>
                 </div>
 
-                {/* Big picker block */}
-                <div className="theme-picker theme-picker--pro">
-                  <div className="theme-picker__box">
-                    <input
-                      className="theme-color theme-color--big"
-                      type="color"
-                      value={
-                        isValidHex(draft[activeKey])
-                          ? draft[activeKey]
-                          : "#000000"
-                      }
-                      onChange={(e) => setDraftValue(activeKey, e.target.value)}
-                      aria-label="Pick color"
-                    />
-                  </div>
+                <div className="theme-picker-v2-wrap">
+                  <InlineColorPicker
+                    value={theme[activeKey]}
+                    onChange={(hex) => updateThemeValue(activeKey, hex)}
+                  />
 
-                  {/* Hex row */}
-                  <div className="theme-hexrow">
+                  <div className="theme-hexrow theme-hexrow--v2">
                     <input
                       className="theme-hex theme-hex--pro"
-                      value={draft[activeKey]}
-                      onChange={(e) => setDraftValue(activeKey, e.target.value)}
+                      value={theme[activeKey]}
+                      onChange={(e) => updateThemeHex(activeKey, e.target.value)}
                       placeholder="#RRGGBB"
                       spellCheck={false}
                     />
                     <div
                       className="theme-swatch"
-                      style={{
-                        background: isValidHex(draft[activeKey])
-                          ? draft[activeKey]
-                          : "#000",
-                      }}
+                      style={{ background: theme[activeKey] }}
                       title="Preview"
                     />
                   </div>
 
-                  {/* Action buttons row (icons) */}
                   <div className="theme-actions">
                     <button
                       type="button"
                       className="theme-action"
-                      title="Reset (from saved)"
+                      title="Reset to saved"
                       onClick={resetToSaved}
                     >
                       ↺
@@ -408,40 +340,15 @@ export default function SiteLayout({ children, active = "home" }: Props) {
                     <button
                       type="button"
                       className="theme-action"
-                      title="Reset (default)"
+                      title="Reset to defaults"
                       onClick={resetDefault}
                     >
                       ⟲
                     </button>
-                    <button
-                      type="button"
-                      className="theme-action theme-action--danger"
-                      title="Clear"
-                      onClick={() => setDraftValue(activeKey, "#000000")}
-                    >
-                      🗑
-                    </button>
                   </div>
 
-                  {/* Save Colors button */}
-                  <button
-                    type="button"
-                    className="btn btn-primary theme-save"
-                    onClick={applySaved}
-                    disabled={!isValidHex(draft[activeKey])}
-                    title={
-                      !isValidHex(draft[activeKey])
-                        ? "Enter a valid hex color"
-                        : "Save Colors"
-                    }
-                  >
-                    Save Colors
-                  </button>
-
-                  {/* tiny hint for the swap */}
                   <div className="theme-hint">
-                    <b>Primary</b> controls header/buttons • <b>Secondary</b>{" "}
-                    controls the rest
+                    <b>Live preview:</b> primary updates the footer automatically.
                   </div>
                 </div>
               </div>

@@ -6,6 +6,7 @@ import { getCmsSetting } from "../utils/cmsSettings";
 import { isBcryptHash } from "../utils/password";
 import * as betaKeysRepo from "../repositories/betaKeys.repo";
 import * as usersRepo from "../repositories/users.repo";
+import { getCorporationForUser } from "../repositories/corporations.repo";
 
 export const USERNAME_REGEX = /^[a-zA-Z0-9-]+$/;
 export const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -23,9 +24,7 @@ function sha1(s: string) {
   return crypto.createHash("sha1").update(s).digest("hex");
 }
 
-export async function getRegisterConfig(
-  pool: Pool,
-): Promise<{ betaRequired: boolean }> {
+export async function getRegisterConfig(pool: Pool): Promise<{ betaRequired: boolean }> {
   const betaMode = await getCmsSetting(pool, "beta_mode_enabled", "0");
   return { betaRequired: betaMode === "1" };
 }
@@ -50,6 +49,7 @@ export async function register(
     password: string;
     confirmPassword: string;
     betaCode?: string;
+    ip?: string;
   },
 ): Promise<{ userId: number; username: string; rank: number }> {
   const username = params.username.trim();
@@ -58,34 +58,48 @@ export async function register(
   const confirmPassword = String(params.confirmPassword || "");
   const betaCode = String(params.betaCode || "").trim();
 
-  if (username.length < 3)
-    throw new Error("Username must be at least 3 characters.");
-  if (username.length > 24)
-    throw new Error("Username cannot exceed 24 characters.");
-  if (!USERNAME_REGEX.test(username))
-    throw new Error(
-      "Username can only contain letters, numbers, and dashes (-).",
-    );
-
-  if (!email.includes("@")) throw new Error("Please enter a valid email.");
-
-  if (!PASSWORD_REGEX.test(password)) {
-    throw new Error(
-      "Password must be at least 8 characters and include an uppercase letter, a number, and a special character.",
-    );
+  if (username.length < 3) {
+    const err = new Error("Username must be at least 3 characters.");
+    (err as any).status = 400;
+    throw err;
   }
-
-  if (!confirmPassword) throw new Error("Please confirm your password.");
-  if (password !== confirmPassword) throw new Error("Passwords do not match.");
+  if (username.length > 24) {
+    const err = new Error("Username cannot exceed 24 characters.");
+    (err as any).status = 400;
+    throw err;
+  }
+  if (!USERNAME_REGEX.test(username)) {
+    const err = new Error("Username can only contain letters, numbers, and dashes (-).");
+    (err as any).status = 400;
+    throw err;
+  }
+  if (!email.includes("@")) {
+    const err = new Error("Please enter a valid email.");
+    (err as any).status = 400;
+    throw err;
+  }
+  if (!PASSWORD_REGEX.test(password)) {
+    const err = new Error("Password must be at least 8 characters and include an uppercase letter, a number, and a special character.");
+    (err as any).status = 400;
+    throw err;
+  }
+  if (!confirmPassword) {
+    const err = new Error("Please confirm your password.");
+    (err as any).status = 400;
+    throw err;
+  }
+  if (password !== confirmPassword) {
+    const err = new Error("Passwords do not match.");
+    (err as any).status = 400;
+    throw err;
+  }
 
   const betaMode = await getCmsSetting(pool, "beta_mode_enabled", "0");
   let betaKeyId: number | null = null;
 
   if (betaMode === "1") {
     if (!betaCode) {
-      const err = new Error(
-        "Registration is currently beta-only. Please enter a beta code.",
-      );
+      const err = new Error("Registration is currently beta-only. Please enter a beta code.");
       (err as any).status = 403;
       throw err;
     }
@@ -99,7 +113,11 @@ export async function register(
   }
 
   const exists = await usersRepo.usernameExists(pool, username);
-  if (exists) throw new Error("That username is already taken.");
+  if (exists) {
+    const err = new Error("That username is already taken.");
+    (err as any).status = 400;
+    throw err;
+  }
 
   const hash = await bcrypt.hash(password, 12);
   const unix = Math.floor(Date.now() / 1000).toString();
@@ -109,7 +127,7 @@ export async function register(
     passwordHash: hash,
     email,
     accountCreatedUnix: unix,
-    authTicket: "",
+    ip: String(params.ip || "127.0.0.1"),
   });
 
   if (betaMode === "1" && betaKeyId) {
@@ -120,25 +138,6 @@ export async function register(
   }
 
   return { userId, username, rank: 1 };
-}
-
-async function verifyTurnstile(token: string) {
-  const res = await fetch(
-    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        secret: process.env.TURNSTILE_SECRET!,
-        response: token,
-      }),
-    },
-  );
-
-  const data: any = await res.json();
-  return data?.success === true;
 }
 
 export async function login(
@@ -157,7 +156,6 @@ export async function login(
 
   const stored = String(user.password);
 
-  // bcrypt
   if (isBcryptHash(stored)) {
     const ok = await bcrypt.compare(password, stored);
     if (!ok) {
@@ -166,15 +164,12 @@ export async function login(
       throw err;
     }
 
-    const rank = Number(user.rank ?? 0);
-    return { id: Number(user.id), username: String(user.username), rank };
+    return { id: Number(user.id), username: String(user.username), rank: Number(user.rank ?? 0) };
   }
 
-  // legacy md5/sha1/plaintext
   let legacyOk = false;
   if (isMd5Hash(stored)) legacyOk = md5(password) === stored.toLowerCase();
-  else if (isSha1Hash(stored))
-    legacyOk = sha1(password) === stored.toLowerCase();
+  else if (isSha1Hash(stored)) legacyOk = sha1(password) === stored.toLowerCase();
   else legacyOk = stored === password;
 
   if (!legacyOk) {
@@ -183,7 +178,6 @@ export async function login(
     throw err;
   }
 
-  // Upgrade to bcrypt on successful legacy login
   try {
     const newHash = await bcrypt.hash(password, 12);
     await usersRepo.updatePasswordHash(pool, Number(user.id), newHash);
@@ -191,12 +185,32 @@ export async function login(
     // ignore upgrade errors
   }
 
-  const rank = Number(user.rank ?? 0);
-  return { id: Number(user.id), username: String(user.username), rank };
+  return { id: Number(user.id), username: String(user.username), rank: Number(user.rank ?? 0) };
 }
 
 export async function getMe(pool: Pool, userId: number) {
-  return usersRepo.getMeById(pool, userId);
+  const user = await usersRepo.getMeById(pool, userId);
+  if (!user) return null;
+
+  const corporation = await getCorporationForUser(pool, userId);
+
+  return {
+    ...user,
+    corporation: corporation
+      ? {
+          id: Number(corporation.corporation_id),
+          name: String(corporation.corporation_name),
+          icon: corporation.corporation_icon ? String(corporation.corporation_icon) : null,
+          canWorkAnywhere: Boolean(corporation.can_work_anywhere),
+          rankId: corporation.rank_id != null ? Number(corporation.rank_id) : null,
+          rankName: corporation.rank_name ? String(corporation.rank_name) : null,
+          rankOrder: corporation.rank_order != null ? Number(corporation.rank_order) : null,
+          isManager: Boolean(corporation.is_manager),
+          weeklyShifts: Number(corporation.weekly_shifts ?? 0),
+          totalShifts: Number(corporation.total_shifts ?? 0),
+        }
+      : null,
+  };
 }
 
 export async function createSsoTicket(
@@ -206,17 +220,9 @@ export async function createSsoTicket(
   await usersRepo.updateAuthTicket(pool, params.userId, params.ticket);
 }
 
-/* =========================
-STATS SETUP (ONE-TIME)
-Uses: points + stats_setup_done
-========================= */
-
 export async function markNewUserNeedsStatsSetup(pool: Pool, userId: number) {
-  // 5 points and setup not done
   await (pool as any).query(
-    `UPDATE users
-SET points = 5, stats_setup_done = 0
-WHERE id = ?`,
+    `UPDATE user_stats SET stat_points = 5, stats_setup_done = 0 WHERE user_id = ?`,
     [userId],
   );
 }
@@ -224,12 +230,19 @@ WHERE id = ?`,
 export async function getStatsSetupStatus(pool: Pool, userId: number) {
   const [rows] = (await (pool as any).query(
     `SELECT
-stats_setup_done,
-points,
-strength, knowledge, farming, health, defense, stamina,
-max_health, max_energy
-FROM users
-WHERE id = ? LIMIT 1`,
+      stats_setup_done,
+      stat_points,
+      strength,
+      knowledge,
+      gathering,
+      defense,
+      stamina,
+      current_health,
+      max_health,
+      energy,
+      max_energy
+    FROM user_stats
+    WHERE user_id = ? LIMIT 1`,
     [userId],
   )) as any;
 
@@ -239,17 +252,15 @@ WHERE id = ? LIMIT 1`,
   return {
     ok: true,
     statsSetupDone: Number(u.stats_setup_done) === 1,
-    points: Number(u.points || 0),
-
+    points: Number(u.stat_points || 0),
     strength: Number(u.strength || 0),
     knowledge: Number(u.knowledge || 0),
-    farming: Number(u.farming || 0),
-    health: Number(u.health || 0),
+    farming: Number(u.gathering || 0),
+    health: 0,
     defense: Number(u.defense || 0),
     stamina: Number(u.stamina || 0),
-
-    maxHealth: Number(u.max_health || 120),
-    maxEnergy: Number(u.max_energy || 120),
+    maxHealth: Number(u.max_health || 100),
+    maxEnergy: Number(u.max_energy || 100),
   };
 }
 
@@ -270,64 +281,54 @@ export async function applyStatsSetup(
     await conn.beginTransaction();
 
     const [rows] = (await conn.query(
-      `SELECT points, stats_setup_done
-FROM users
-WHERE id = ? FOR UPDATE`,
+      `SELECT stat_points, stats_setup_done FROM user_stats WHERE user_id = ? FOR UPDATE`,
       [userId],
     )) as any;
 
     const u = rows?.[0];
-    if (!u) throw new Error("User not found.");
+    if (!u) throw new Error("User stats not found.");
 
     if (Number(u.stats_setup_done) === 1) {
-      // already completed
       await conn.commit();
       return { ok: true, alreadyDone: true };
     }
 
-    const available = Number(u.points || 0);
-    const total =
-      inc.strength +
-      inc.knowledge +
-      inc.farming +
-      inc.health +
-      inc.defense +
-      inc.stamina;
+    const available = Number(u.stat_points || 0);
+    const total = inc.strength + inc.knowledge + inc.farming + inc.health + inc.defense + inc.stamina;
 
-    if (!Number.isFinite(total) || total <= 0) {
-      throw new Error("No points applied.");
-    }
+    if (!Number.isFinite(total) || total <= 0) throw new Error("No points applied.");
     if (total > available) throw new Error("Not enough points.");
 
-    // Rules:
-    // Health: +5 max_health per level
-    // Stamina: +5 max_energy per level
     const addMaxHealth = inc.health * 5;
+    const addCurrentHealth = inc.health * 5;
     const addMaxEnergy = inc.stamina * 5;
+    const addEnergy = inc.stamina * 5;
 
     await conn.query(
-      `UPDATE users
-SET
-strength = strength + ?,
-knowledge = knowledge + ?,
-farming = farming + ?,
-health = health + ?,
-defense = defense + ?,
-stamina = stamina + ?,
-max_health = max_health + ?,
-max_energy = max_energy + ?,
-points = points - ?,
-stats_setup_done = CASE WHEN (points - ?) = 0 THEN 1 ELSE stats_setup_done END
-WHERE id = ?`,
+      `UPDATE user_stats
+       SET
+         strength = strength + ?,
+         knowledge = knowledge + ?,
+         gathering = gathering + ?,
+         defense = defense + ?,
+         stamina = stamina + ?,
+         max_health = max_health + ?,
+         current_health = current_health + ?,
+         max_energy = max_energy + ?,
+         energy = energy + ?,
+         stat_points = stat_points - ?,
+         stats_setup_done = CASE WHEN (stat_points - ?) <= 0 THEN 1 ELSE stats_setup_done END
+       WHERE user_id = ?`,
       [
         inc.strength,
         inc.knowledge,
         inc.farming,
-        inc.health,
         inc.defense,
         inc.stamina,
         addMaxHealth,
+        addCurrentHealth,
         addMaxEnergy,
+        addEnergy,
         total,
         total,
         userId,

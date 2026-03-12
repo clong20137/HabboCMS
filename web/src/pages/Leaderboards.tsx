@@ -6,26 +6,33 @@ import React, {
   useState,
 } from "react";
 import SiteLayout from "../components/layout/SiteLayout";
-import { api, LeaderboardItem } from "../api/client";
+import { api, type LeaderboardItem } from "../api/client";
 import "../styles/leaderboards.scss";
 import { useHotelTitle } from "../hooks/useHotelTitle";
-function formatNumber(n: number) {
-  return new Intl.NumberFormat().format(n);
-}
 
+function formatNumber(n: number) {
+  return new Intl.NumberFormat().format(Number(n || 0));
+}
 
 type StatKey =
   | "credits"
-  | "bank_amount"
+  | "bank_credits"
   | "kills"
   | "deaths"
   | "punches_thrown"
-  | "punches_received"
-  | "arrests_made"
-  | "arrests_amount"
-  | "damage_dealt"
+  | "punches_landed"
+  | "arrests"
+  | "robberies"
+  | "damage_inflicted"
   | "damage_received"
-  | "kd";
+  | "xp"
+  | "arena_wins"
+  | "arena_losses"
+  | "strength"
+  | "defense"
+  | "stamina"
+  | "gathering"
+  | "knowledge";
 
 type BoardCard = {
   key: StatKey;
@@ -38,30 +45,34 @@ type BoardCard = {
 
 const CROSSFADE_MS = 420;
 
+const icon = (file: string) =>
+  new URL(`../assets/leaderboards/${file}`, import.meta.url).href;
+
 export default function Leaderboards() {
   useHotelTitle("Leaderboards");
+
   const boards: BoardCard[] = useMemo(
     () => [
       {
         key: "credits",
         title: "MOST CREDITS",
-        iconSrc: "/assets/leaderboards/intellect.png",
+        iconSrc: icon("intellect.png"),
         load: () => api.getLeaderboard("credits", 10),
         valueLabel: (n) => `${formatNumber(n)} Credits`,
         valueRight: (n) => formatNumber(n),
       },
       {
-        key: "bank_amount",
+        key: "bank_credits",
         title: "MOST BANK",
-        iconSrc: "/assets/leaderboards/bank.png",
-        load: () => api.getLeaderboard("bank_amount", 10),
+        iconSrc: icon("bank.png"),
+        load: () => api.getLeaderboard("bank_credits", 10),
         valueLabel: (n) => `${formatNumber(n)} Bank`,
         valueRight: (n) => formatNumber(n),
       },
       {
         key: "kills",
         title: "MOST KILLS",
-        iconSrc: "/assets/leaderboards/kills.png",
+        iconSrc: icon("kills.png"),
         load: () => api.getLeaderboard("kills", 10),
         valueLabel: (n) => `${formatNumber(n)} Kills`,
         valueRight: (n) => formatNumber(n),
@@ -69,7 +80,7 @@ export default function Leaderboards() {
       {
         key: "deaths",
         title: "MOST DEATHS",
-        iconSrc: "/assets/leaderboards/deaths.png",
+        iconSrc: icon("deaths.png"),
         load: () => api.getLeaderboard("deaths", 10),
         valueLabel: (n) => `${formatNumber(n)} Deaths`,
         valueRight: (n) => formatNumber(n),
@@ -77,58 +88,66 @@ export default function Leaderboards() {
       {
         key: "punches_thrown",
         title: "PUNCHES THROWN",
-        iconSrc: "/assets/leaderboards/punches_thrown.png",
+        iconSrc: icon("punches_thrown.png"),
         load: () => api.getLeaderboard("punches_thrown", 10),
         valueLabel: (n) => `${formatNumber(n)} Punches Thrown`,
         valueRight: (n) => formatNumber(n),
       },
       {
-        key: "punches_received",
-        title: "PUNCHES RECEIVED",
-        iconSrc: "/assets/leaderboards/punches_received.png",
-        load: () => api.getLeaderboard("punches_received", 10),
-        valueLabel: (n) => `${formatNumber(n)} Punches Received`,
+        key: "punches_landed",
+        title: "PUNCHES LANDED",
+        iconSrc: icon("punches_received.png"),
+        load: () => api.getLeaderboard("punches_landed", 10),
+        valueLabel: (n) => `${formatNumber(n)} Punches Landed`,
         valueRight: (n) => formatNumber(n),
       },
       {
-        key: "arrests_made",
-        title: "ARRESTS MADE",
-        iconSrc: "/assets/leaderboards/cuffs.png",
-        load: () => api.getLeaderboard("arrests_made", 10),
-        valueLabel: (n) => `${formatNumber(n)} Arrests Made`,
+        key: "arrests",
+        title: "MOST ARRESTS",
+        iconSrc: icon("cuffs.png"),
+        load: () => api.getLeaderboard("arrests", 10),
+        valueLabel: (n) => `${formatNumber(n)} Arrests`,
         valueRight: (n) => formatNumber(n),
       },
       {
-        key: "arrests_amount",
-        title: "ARREST AMOUNT",
-        iconSrc: "/assets/leaderboards/cuffs.png",
-        load: () => api.getLeaderboard("arrests_amount", 10),
-        valueLabel: (n) => `${formatNumber(n)} Arrest Amount`,
+        key: "robberies",
+        title: "MOST ROBBERIES",
+        iconSrc: icon("bank.png"),
+        load: () => api.getLeaderboard("robberies", 10),
+        valueLabel: (n) => `${formatNumber(n)} Robberies`,
         valueRight: (n) => formatNumber(n),
       },
       {
-        key: "damage_dealt",
-        title: "DAMAGE DEALT",
-        iconSrc: "/assets/leaderboards/damage.png",
-        load: () => api.getLeaderboard("damage_dealt", 10),
-        valueLabel: (n) => `${formatNumber(n)} Damage Dealt`,
+        key: "damage_inflicted",
+        title: "DAMAGE INFLICTED",
+        iconSrc: icon("damage.png"),
+        load: () => api.getLeaderboard("damage_inflicted", 10),
+        valueLabel: (n) => `${formatNumber(n)} Damage`,
         valueRight: (n) => formatNumber(n),
       },
       {
         key: "damage_received",
         title: "DAMAGE RECEIVED",
-        iconSrc: "/assets/leaderboards/damage.png",
+        iconSrc: icon("damage.png"),
         load: () => api.getLeaderboard("damage_received", 10),
-        valueLabel: (n) => `${formatNumber(n)} Damage Received`,
+        valueLabel: (n) => `${formatNumber(n)} Damage`,
         valueRight: (n) => formatNumber(n),
       },
       {
-        key: "kd",
-        title: "BEST K/D",
-        iconSrc: "/assets/leaderboards/kd.png",
-        load: () => api.getLeaderboard("kd", 10),
-        valueLabel: (n) => `K/D ${Number(n).toFixed(2)}`,
-        valueRight: (n) => Number(n).toFixed(2),
+        key: "strength",
+        title: "TOP STRENGTH",
+        iconSrc: icon("kills.png"),
+        load: () => api.getLeaderboard("strength", 10),
+        valueLabel: (n) => `${formatNumber(n)} Strength`,
+        valueRight: (n) => formatNumber(n),
+      },
+      {
+        key: "knowledge",
+        title: "TOP KNOWLEDGE",
+        iconSrc: icon("intellect.png"),
+        load: () => api.getLeaderboard("knowledge", 10),
+        valueLabel: (n) => `${formatNumber(n)} Knowledge`,
+        valueRight: (n) => formatNumber(n),
       },
     ],
     [],
@@ -139,13 +158,10 @@ export default function Leaderboards() {
 
   const [page, setPage] = useState(0);
   const [nextPage, setNextPage] = useState<number | null>(null);
-
-  // phase: idle -> prepare (mount next at opacity 0) -> fading (crossfade) -> idle
   const [phase, setPhase] = useState<"idle" | "prepare" | "fading">("idle");
 
   const timerRef = useRef<number | null>(null);
 
-  // Cache per board key
   const [data, setData] = useState<Record<string, LeaderboardItem[]>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<Record<string, string | null>>({});
@@ -170,7 +186,7 @@ export default function Leaderboards() {
         setError((m) => ({ ...m, [b.key]: null }));
 
         const items = await b.load();
-        setData((m) => ({ ...m, [b.key]: items }));
+        setData((m) => ({ ...m, [b.key]: Array.isArray(items) ? items : [] }));
       } catch (e: any) {
         setError((m) => ({
           ...m,
@@ -182,14 +198,10 @@ export default function Leaderboards() {
     }
   }
 
-  // load visible on entry
   useEffect(() => {
     ensureLoaded(currentBoards);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  // 🔥 This is the key: after we mount the "next" page at opacity 0,
-  // useLayoutEffect flips to "fading" BEFORE paint, preventing any flash.
   useLayoutEffect(() => {
     if (phase !== "prepare") return;
     setPhase("fading");
@@ -199,17 +211,14 @@ export default function Leaderboards() {
     const safe = Math.max(0, Math.min(next, pageCount - 1));
     if (safe === page) return;
 
-    // if mid-transition, just update the target
     if (phase !== "idle") {
       setNextPage(safe);
       return;
     }
 
-    // mount next page first at opacity 0 (inline style ensures 0 on first paint)
     setNextPage(safe);
     setPhase("prepare");
 
-    // start preloading incoming, but do NOT wait (fade starts immediately)
     const start = safe * perPage;
     const incoming = boards.slice(start, start + perPage);
     ensureLoaded(incoming);
@@ -263,39 +272,44 @@ export default function Leaderboards() {
 
                 {!isLoading && !err && (
                   <div className="leaderboard-list">
-                    {items.slice(0, 10).map((u, idx) => {
-                      const medalClass =
-                        idx === 0
-                          ? "is-gold"
-                          : idx === 1
-                            ? "is-silver"
-                            : idx === 2
-                              ? "is-bronze"
-                              : "";
+                    {items.length === 0 ? (
+                      <div className="muted">No data yet.</div>
+                    ) : (
+                      items.slice(0, 10).map((u, idx) => {
+                        const medalClass =
+                          idx === 0
+                            ? "is-gold"
+                            : idx === 1
+                              ? "is-silver"
+                              : idx === 2
+                                ? "is-bronze"
+                                : "";
 
-                      return (
-                        <div
-                          key={u.id}
-                          className={`leaderboard-row ${medalClass}`}
-                        >
-                          <div className="lb-left">
-                            <div className="lb-rank">{idx + 1}</div>
-                            <div className="lb-avatar" aria-hidden="true" />
-                            <div className="lb-meta">
-                              <div className="lb-name">{u.username}</div>
-                              <div className="lb-sub muted">
-                                {board.valueLabel(u.value)}
+                        return (
+                          <div
+                            key={`${board.key}-${u.id}-${idx}`}
+                            className={`leaderboard-row ${medalClass}`}
+                          >
+                            <div className="lb-left">
+                              <div className="lb-rank">{idx + 1}</div>
+                              <div className="lb-avatar" aria-hidden="true" />
+                              <div className="lb-meta">
+                                <div className="lb-name">{u.username}</div>
+                                <div className="lb-sub">
+                                  {board.valueLabel(Number(u.value ?? 0))}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="lb-right">
+                              <div className="lb-value">
+                                {board.valueRight(Number(u.value ?? 0))}
                               </div>
                             </div>
                           </div>
-                          <div className="lb-right">
-                            <div className="lb-value">
-                              {board.valueRight(u.value)}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 )}
               </div>
@@ -313,7 +327,6 @@ export default function Leaderboards() {
     <SiteLayout active="community">
       <div className="leaderboards-page">
         <div className="lb-xfade-stage" style={{ minHeight: 420 }}>
-          {/* CURRENT */}
           <div
             key={`page-current-${page}`}
             className="lb-xfade-layer"
@@ -326,7 +339,6 @@ export default function Leaderboards() {
             {renderBoards(currentBoards)}
           </div>
 
-          {/* NEXT */}
           {incomingBoards && nextPage !== null && (
             <div
               key={`page-next-${nextPage}`}
@@ -342,23 +354,44 @@ export default function Leaderboards() {
           )}
         </div>
 
-        {/* DOTS */}
         {pageCount > 1 && (
-          <div
-            className="leaderboards-dots"
-            role="tablist"
-            aria-label="Leaderboards pages"
-          >
-            {Array.from({ length: pageCount }).map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                className={`lb-dot ${i === (nextPage ?? page) ? "active" : ""}`}
-                onClick={() => goTo(i)}
-                aria-label={`Go to page ${i + 1}`}
-                aria-current={i === (nextPage ?? page) ? "true" : "false"}
-              />
-            ))}
+          <div className="leaderboards-nav">
+            <button
+              type="button"
+              className="lb-nav-btn"
+              onClick={() => goTo(page - 1)}
+              disabled={phase !== "idle" || page <= 0}
+              aria-label="Previous leaderboard page"
+            >
+              ‹
+            </button>
+
+            <div
+              className="leaderboards-dots"
+              role="tablist"
+              aria-label="Leaderboards pages"
+            >
+              {Array.from({ length: pageCount }).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`lb-dot ${i === (nextPage ?? page) ? "active" : ""}`}
+                  onClick={() => goTo(i)}
+                  aria-label={`Go to page ${i + 1}`}
+                  aria-current={i === (nextPage ?? page) ? "true" : "false"}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="lb-nav-btn"
+              onClick={() => goTo(page + 1)}
+              disabled={phase !== "idle" || page >= pageCount - 1}
+              aria-label="Next leaderboard page"
+            >
+              ›
+            </button>
           </div>
         )}
       </div>

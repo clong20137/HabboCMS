@@ -1,3 +1,4 @@
+import { hkRequest } from "../../api/hkApi";
 import { useEffect, useMemo, useState } from "react";
 
 type Props = { me: any };
@@ -16,27 +17,17 @@ async function apiGet<T>(url: string): Promise<T> {
 }
 
 async function apiPut<T>(url: string, body: any): Promise<T> {
-  const r = await fetch(url, {
+  return hkRequest<T>(url.replace(/^\/api/, ""), {
     method: "PUT",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data?.error || data?.message || "Request failed");
-  return data as T;
 }
 
 async function apiPost<T>(url: string, body: any): Promise<T> {
-  const r = await fetch(url, {
+  return hkRequest<T>(url.replace(/^\/api/, ""), {
     method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data?.error || data?.message || "Request failed");
-  return data as T;
 }
 
 function formatSettingLabel(key: string): string {

@@ -19,59 +19,30 @@ import navStaff from "../../assets/navigation/staff.png";
 import navEdit from "../../assets/navigation/edit.png";
 import hkBansIcon from "../../assets/housekeeping/edit.png";
 import logoutIcon from "../../assets/navigation/logout.gif";
+import InlineColorPicker from "../../components/theme/InlineColorPicker";
+import {
+  DEFAULT_THEME,
+  ThemeState,
+  darken,
+  isValidHex,
+  normalizeTheme,
+  readableText,
+} from "../../theme/themeUtils";
 
 type Props = PropsWithChildren<{}>;
 
 type OpenMenu = null | "account" | "theme";
 
-type ThemeTab = "primary" | "secondary" | "footer";
-type ThemeState = { primary: string; secondary: string; footer: string };
+type ThemeTab = "primary" | "secondary";
 
 const THEME_KEY = "plus_theme_v1";
-
-const clamp = (n: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, n));
-
-function hexToRgb(hex: string) {
-  const h = hex.replace("#", "").trim();
-  if (h.length !== 6) return null;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  if ([r, g, b].some((x) => Number.isNaN(x))) return null;
-  return { r, g, b };
-}
-
-function rgbToHex(r: number, g: number, b: number) {
-  const to = (x: number) =>
-    clamp(Math.round(x), 0, 255).toString(16).padStart(2, "0");
-  return `#${to(r)}${to(g)}${to(b)}`;
-}
-
-function darken(hex: string, pct: number) {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return hex;
-  const f = 1 - clamp(pct, 0, 0.9);
-  return rgbToHex(rgb.r * f, rgb.g * f, rgb.b * f);
-}
-
-function readableText(hex: string) {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return "#ffffff";
-  const srgb = [rgb.r, rgb.g, rgb.b].map((v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  });
-  const L = 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
-  return L > 0.55 ? "#0b0f14" : "#ffffff";
-}
 
 function applyThemeVars(t: ThemeState) {
   const root = document.documentElement;
 
-  const primary = t.primary || "#6f7b86";
-  const secondary = t.secondary || "#2a2f36";
-  const footer = t.footer || "#1b2026";
+  const primary = t.primary || DEFAULT_THEME.primary;
+  const secondary = t.secondary || DEFAULT_THEME.secondary;
+  const footer = primary;
 
   root.style.setProperty("--primary-color", primary);
   root.style.setProperty("--primary-dark", darken(primary, 0.18));
@@ -90,19 +61,14 @@ function loadTheme(): ThemeState {
   try {
     const raw = localStorage.getItem(THEME_KEY);
     if (!raw) throw new Error("no theme");
-    const parsed = JSON.parse(raw);
-    return {
-      primary: String(parsed.primary || "#6f7b86"),
-      secondary: String(parsed.secondary || "#2a2f36"),
-      footer: String(parsed.footer || "#1b2026"),
-    };
+    return normalizeTheme(JSON.parse(raw));
   } catch {
-    return { primary: "#6f7b86", secondary: "#2a2f36", footer: "#1b2026" };
+    return DEFAULT_THEME;
   }
 }
 
 function saveTheme(t: ThemeState) {
-  localStorage.setItem(THEME_KEY, JSON.stringify(t));
+  localStorage.setItem(THEME_KEY, JSON.stringify(normalizeTheme(t)));
 }
 
 type HKMe = {
@@ -228,17 +194,31 @@ export default function HKLayout({ children }: Props) {
     setOpenMenu((prev) => (prev === name ? null : name));
   }
 
-  function setThemeValue(key: keyof ThemeState, value: string) {
+  function updateThemeValue(key: "primary" | "secondary", value: string) {
     const v = String(value || "").trim();
-    setTheme((prev) => ({ ...prev, [key]: v }));
+    setTheme((prev) =>
+      normalizeTheme({
+        ...prev,
+        [key]: isValidHex(v) ? v : prev[key],
+      }),
+    );
   }
 
-  const activeKey: keyof ThemeState =
-    themeTab === "primary"
-      ? "primary"
-      : themeTab === "secondary"
-        ? "secondary"
-        : "footer";
+  function updateThemeHex(key: "primary" | "secondary", value: string) {
+    const v = String(value || "").trim();
+    if (!v) return;
+
+    if (!v.startsWith("#")) {
+      const candidate = `#${v.replace(/^#+/, "")}`;
+      if (isValidHex(candidate)) updateThemeValue(key, candidate);
+      return;
+    }
+
+    if (isValidHex(v)) updateThemeValue(key, v);
+  }
+
+  const activeKey: "primary" | "secondary" =
+    themeTab === "primary" ? "primary" : "secondary";
 
   return (
     <div className="site site--hk" ref={wrapRef}>
@@ -347,76 +327,51 @@ export default function HKLayout({ children }: Props) {
                   >
                     Secondary
                   </button>
-                  <button
-                    className={`theme-tab ${themeTab === "footer" ? "active" : ""}`}
-                    onClick={() => setThemeTab("footer")}
-                    type="button"
-                  >
-                    Footer
-                  </button>
                 </div>
 
-                <div className="theme-picker">
-                  <div className="theme-row">
-                    <input
-                      className="theme-color"
-                      type="color"
-                      value={theme[activeKey]}
-                      onChange={(e) => setThemeValue(activeKey, e.target.value)}
-                    />
+                <div className="theme-picker-v2-wrap">
+                  <InlineColorPicker
+                    value={theme[activeKey]}
+                    onChange={(hex) => updateThemeValue(activeKey, hex)}
+                  />
 
+                  <div className="theme-hexrow theme-hexrow--v2">
                     <input
-                      className="theme-hex"
+                      className="theme-hex theme-hex--pro"
                       value={theme[activeKey]}
-                      onChange={(e) => setThemeValue(activeKey, e.target.value)}
+                      onChange={(e) => updateThemeHex(activeKey, e.target.value)}
                       placeholder="#RRGGBB"
+                      spellCheck={false}
+                    />
+                    <div
+                      className="theme-swatch"
+                      style={{ background: theme[activeKey] }}
+                      title="Preview"
                     />
                   </div>
 
-                  <div className="theme-preview">
-                    <div
-                      className="theme-chip"
-                      style={{
-                        background: theme[activeKey],
-                        color: readableText(theme[activeKey]),
-                      }}
+                  <div className="theme-actions">
+                    <button
+                      type="button"
+                      className="theme-action"
+                      onClick={() => setTheme(loadTheme())}
+                      title="Reset to saved"
                     >
-                      Preview
-                    </div>
-                    <div
-                      className="theme-chip"
-                      style={{
-                        background: darken(theme[activeKey], 0.18),
-                        color: readableText(darken(theme[activeKey], 0.18)),
-                      }}
+                      ↺
+                    </button>
+                    <button
+                      type="button"
+                      className="theme-action"
+                      onClick={() => setTheme(DEFAULT_THEME)}
+                      title="Reset to default"
                     >
-                      Dark
-                    </div>
+                      ⟲
+                    </button>
                   </div>
 
-                  <div className="dropdown-sep" />
-
-                  <button
-                    className="dropdown-item"
-                    type="button"
-                    onClick={() => setTheme(loadTheme())}
-                  >
-                    Reset (from saved)
-                  </button>
-
-                  <button
-                    className="dropdown-item dropdown-item--danger"
-                    type="button"
-                    onClick={() =>
-                      setTheme({
-                        primary: "#6f7b86",
-                        secondary: "#2a2f36",
-                        footer: "#1b2026",
-                      })
-                    }
-                  >
-                    Reset (default)
-                  </button>
+                  <div className="theme-hint">
+                    <b>Live preview:</b> primary updates the footer automatically.
+                  </div>
                 </div>
               </div>
             </div>

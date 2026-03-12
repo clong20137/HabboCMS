@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { hkRequest } from "../../api/hkApi";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 type TicketStatus = "open" | "pending" | "closed";
@@ -36,27 +37,17 @@ async function apiGet<T>(url: string): Promise<T> {
 }
 
 async function apiPost<T>(url: string, body: any): Promise<T> {
-  const r = await fetch(url, {
+  return hkRequest<T>(url.replace(/^\/api/, ""), {
     method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data?.error || data?.message || "Request failed");
-  return data as T;
 }
 
 async function apiPatch<T>(url: string, body: any): Promise<T> {
-  const r = await fetch(url, {
+  return hkRequest<T>(url.replace(/^\/api/, ""), {
     method: "PATCH",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data?.error || data?.message || "Request failed");
-  return data as T;
 }
 
 function fmtDate(s: string) {

@@ -46,7 +46,11 @@ const pCommentId = z.object({
 });
 
 const bToggleReaction = z.object({
-  reaction: z.enum(["thumbs_up", "smile"]),
+  reaction: z
+    .string()
+    .trim()
+    .min(1, "Reaction is required.")
+    .max(32, "Reaction is too long."),
 });
 
 newsRouter.get(

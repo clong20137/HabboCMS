@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { hkRequest } from "../../api/hkApi";
 import { Link } from "react-router-dom";
 
 import editIcon from "../../assets/housekeeping/edit.png";
@@ -10,12 +11,9 @@ type NewsItem = {
   description: string;
   story: string;
   storyHtml: string;
-
-  // API might return any of these depending on how your backend is written:
   imageUrl?: string;
   image?: string;
   imagePath?: string;
-
   author: string;
   createdAt: string;
 };
@@ -28,6 +26,11 @@ type ListResponse = {
 };
 
 async function hkFetch<T>(url: string, opts?: RequestInit): Promise<T> {
+  const method = String(opts?.method || "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
+    return hkRequest<T>(url.replace(/^\/api/, ""), opts);
+  }
+
   const res = await fetch(url, {
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -35,10 +38,11 @@ async function hkFetch<T>(url: string, opts?: RequestInit): Promise<T> {
   });
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok)
+  if (!res.ok) {
     throw new Error(
       (data as any)?.error || (data as any)?.message || "Request failed",
     );
+  }
   return data as T;
 }
 
@@ -49,7 +53,6 @@ function snippet(s: string, n: number) {
   return t.length > n ? t.slice(0, n).trim() + "…" : t;
 }
 
-// --- base-path safe URL helper (supports hosting under /web etc.) ---
 const APP_BASE =
   (import.meta as any).env?.BASE_URL || (process as any).env?.PUBLIC_URL || "/";
 
@@ -62,7 +65,21 @@ function withBase(url: string) {
   return `${b}${u}`;
 }
 
-// --- NEW: build correct news image src from whatever backend returns ---
+const newsImageModules = import.meta.glob(
+  "../../assets/news/*.{png,jpg,jpeg,gif,webp,avif,svg}",
+  {
+    eager: true,
+    import: "default",
+  },
+) as Record<string, string>;
+
+const newsImageMap: Record<string, string> = Object.fromEntries(
+  Object.entries(newsImageModules).map(([fullPath, url]) => {
+    const fileName = fullPath.split("/").pop() || fullPath;
+    return [fileName.toLowerCase(), url];
+  }),
+);
+
 function resolveNewsImageSrc(n: NewsItem) {
   const raw =
     (n.imageUrl && n.imageUrl.trim()) ||
@@ -70,13 +87,31 @@ function resolveNewsImageSrc(n: NewsItem) {
     (n.imagePath && n.imagePath.trim()) ||
     "";
 
-  if (!raw) return withBase("/assets/news/default.png");
+  if (!raw) return "";
 
-  // If backend already sends a full/absolute URL or a rooted path, use it:
-  if (/^https?:\/\//i.test(raw) || raw.startsWith("/")) return withBase(raw);
+  if (
+    /^(https?:)?\/\//i.test(raw) ||
+    raw.startsWith("data:") ||
+    raw.startsWith("blob:")
+  ) {
+    return raw;
+  }
 
-  // Otherwise treat it as a filename stored in DB, and build the public path:
-  return withBase(`/assets/news/${raw}`);
+  const normalized = raw.replace(/\\/g, "/").trim();
+  const fileName =
+    normalized.split("/").pop()?.toLowerCase() || normalized.toLowerCase();
+
+  if (newsImageMap[fileName]) return newsImageMap[fileName];
+
+  if (normalized.startsWith("/assets/news/")) return withBase(normalized);
+  if (normalized.startsWith("assets/news/")) return withBase(`/${normalized}`);
+  if (normalized.startsWith("/src/assets/news/"))
+    return withBase(normalized.replace("/src", ""));
+  if (normalized.startsWith("src/assets/news/")) {
+    return withBase(`/${normalized.replace(/^src\//, "")}`);
+  }
+
+  return withBase(`/assets/news/${fileName}`);
 }
 
 export default function HKNewsList() {
@@ -117,7 +152,6 @@ export default function HKNewsList() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offset]);
 
   useEffect(() => {
@@ -125,12 +159,13 @@ export default function HKNewsList() {
       setOffset(0);
       load();
     }, 250);
+
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   async function doDelete(id: number) {
     if (!confirm("Delete this article?")) return;
+
     try {
       await hkFetch(`/api/hk/news/${id}`, { method: "DELETE" });
       await load();
@@ -164,18 +199,18 @@ export default function HKNewsList() {
             {items.map((n) => (
               <div key={n.id} className="hk-newsCard">
                 <div className="hk-newsCard__thumb">
-                  <img
-                    src={resolveNewsImageSrc(n)}
-                    alt={n.title}
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.src = withBase(
-                        "/assets/news/default.png",
-                      );
-                    }}
-                  />
+                  {resolveNewsImageSrc(n) ? (
+                    <img
+                      src={resolveNewsImageSrc(n)}
+                      alt={n.title}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="hk-newsCard__image hk-newsCard__image--empty">
+                      No Image
+                    </div>
+                  )}
 
-                  {/* Overlay actions */}
                   <div className="hk-newsCard__overlay">
                     <Link
                       className="hk-newsCard__iconBtn"
@@ -211,7 +246,6 @@ export default function HKNewsList() {
           </div>
         )}
 
-        {/* Pager */}
         <div className="hk-newsPager">
           <div style={{ fontWeight: 900, opacity: 0.9 }}>
             Page {page} / {pages} • {total} total

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { hkRequest } from "../../api/hkApi";
 
 import editIcon from "../../assets/housekeeping/edit.png";
 import deleteIcon from "../../assets/housekeeping/delete.png";
@@ -19,6 +20,11 @@ type ListResponse = {
 };
 
 async function hkFetch<T>(url: string, opts?: RequestInit): Promise<T> {
+  const method = String(opts?.method || "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
+    return hkRequest<T>(url.replace(/^\/api/, ""), opts);
+  }
+
   const res = await fetch(url, {
     credentials: "include",
     headers: { "Content-Type": "application/json" },

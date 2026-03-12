@@ -56,7 +56,7 @@ authRouter.post(
   validateBody(bRegister),
   asyncHandler(async (req, res) => {
     const body = req.body as any;
-    const result = await authService.register(pool, body);
+    const result = await authService.register(pool, { ...(body as any), ip: req.ip });
 
     // ✅ NEW: force first-time stat setup (5 points) using "points"
     await authService.markNewUserNeedsStatsSetup(pool, result.userId);
@@ -289,23 +289,23 @@ authRouter.get(
         rank: Number((user as any).rank ?? 0),
 
         credits: Number((user as any).credits ?? 0),
-        bank_amount: Number((user as any).bank_amount ?? 0),
-        kd: Number((user as any).kd ?? 0),
+        bank_amount: Number((user as any).bank_credits ?? 0),
+        kd: Number((user as any).deaths ?? 0) > 0 ? Number((user as any).kills ?? 0) / Number((user as any).deaths ?? 1) : Number((user as any).kills ?? 0),
 
         kills: Number((user as any).kills ?? 0),
         deaths: Number((user as any).deaths ?? 0),
         punches_thrown: Number((user as any).punches_thrown ?? 0),
-        punches_received: Number((user as any).punches_received ?? 0),
-        arrests_made: Number((user as any).arrests_made ?? 0),
-        arrests_amount: Number((user as any).arrests_amount ?? 0),
-        damage_dealt: Number((user as any).damage_dealt ?? 0),
+        punches_received: Number((user as any).punches_landed ?? 0),
+        arrests_made: Number((user as any).arrests ?? 0),
+        arrests_amount: Number((user as any).arrests ?? 0),
+        damage_dealt: Number((user as any).damage_inflicted ?? 0),
         damage_received: Number((user as any).damage_received ?? 0),
 
         // Stats
         strength: Number((user as any).strength ?? 0),
         knowledge: Number((user as any).knowledge ?? 0),
-        farming: Number((user as any).farming ?? 0),
-        health: Number((user as any).health ?? 0),
+        farming: Number((user as any).gathering ?? 0),
+        health: 0,
         defense: Number((user as any).defense ?? 0),
         stamina: Number((user as any).stamina ?? 0),
 
@@ -315,8 +315,10 @@ authRouter.get(
         energy: Number((user as any).energy ?? 0),
 
         // Setup gating
-        points: Number((user as any).points ?? 0),
+        points: Number((user as any).stat_points ?? 0),
         statsSetupDone: Number((user as any).stats_setup_done ?? 1) === 1,
+
+        corporation: (user as any).corporation ?? null,
       },
     });
   }),

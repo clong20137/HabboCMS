@@ -46,14 +46,34 @@ export async function hkRequest<T = any>(
       headers["Content-Type"] = "application/json";
   }
 
-  const r = await fetch(`${API_BASE}${path}`, {
+  let r = await fetch(`${API_BASE}${path}`, {
     ...opts,
     method,
     credentials: "include",
     headers,
   });
 
-  const data = await r.json().catch(() => ({}));
+  let data = await r.json().catch(() => ({}));
+
+  if (
+    isMutation(method) &&
+    r.status === 403 &&
+    String(data?.error || data?.message || "").toLowerCase().includes("csrf")
+  ) {
+    csrfToken = null;
+    const token = await ensureCsrf();
+    r = await fetch(`${API_BASE}${path}`, {
+      ...opts,
+      method,
+      credentials: "include",
+      headers: {
+        ...headers,
+        "X-CSRF-Token": token,
+      },
+    });
+    data = await r.json().catch(() => ({}));
+  }
+
   if (!r.ok)
     throw new Error(data?.error || data?.message || `HTTP ${r.status}`);
   return data as T;

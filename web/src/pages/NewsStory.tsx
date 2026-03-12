@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import DOMPurify from "dompurify";
 import { useNavigate, useParams } from "react-router-dom";
+import EmojiPicker, { Theme, type EmojiClickData } from "emoji-picker-react";
 import SiteLayout from "../components/layout/SiteLayout";
 import { useAuth } from "../auth/AuthContext";
+import { useToast } from "../ui/toast/ToastContext";
 import {
   api,
   type NewsComment,
@@ -23,7 +26,58 @@ function fmtDate(iso?: string) {
   });
 }
 
+function normalizeStoredImageValue(rawInput?: string) {
+  const raw = String(rawInput || "").trim();
+  if (!raw) return "";
+
+  if (
+    /^(https?:)?\/\//i.test(raw) ||
+    raw.startsWith("data:") ||
+    raw.startsWith("blob:")
+  ) {
+    return raw;
+  }
+
+  const normalized = raw.replace(/\\/g, "/");
+  return normalized.split("/").pop() || normalized;
+}
+
+const newsImageModules = import.meta.glob(
+  "../assets/news/*.{png,jpg,jpeg,gif,webp,avif,svg}",
+  {
+    eager: true,
+    import: "default",
+  },
+) as Record<string, string>;
+
+const availableNewsImages = Object.entries(newsImageModules)
+  .map(([fullPath, url]) => {
+    const fileName = fullPath.split("/").pop() || fullPath;
+    return { name: fileName, url };
+  })
+  .sort((a, b) => a.name.localeCompare(b.name));
+
+function resolveNewsPreview(rawInput?: string) {
+  const normalized = normalizeStoredImageValue(rawInput);
+  if (!normalized) return "";
+
+  if (
+    /^(https?:)?\/\//i.test(normalized) ||
+    normalized.startsWith("data:") ||
+    normalized.startsWith("blob:")
+  ) {
+    return normalized;
+  }
+
+  const found = availableNewsImages.find(
+    (x) => x.name.toLowerCase() === normalized.toLowerCase(),
+  );
+
+  return found?.url || normalized;
+}
+
 const COMMENT_COOLDOWN_MS = 5 * 60 * 1000;
+const COMMENTS_PER_PAGE = 10;
 
 function fmtCountdown(msLeft: number) {
   const s = Math.max(0, Math.ceil(msLeft / 1000));
@@ -32,20 +86,146 @@ function fmtCountdown(msLeft: number) {
   return `${mm}:${String(ss).padStart(2, "0")}`;
 }
 
+type PickerAnchor = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+};
+
+function getAnchorPosition(el: HTMLElement): PickerAnchor {
+  const rect = el.getBoundingClientRect();
+  return {
+    top: rect.top,
+    left: rect.left,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
+function EmojiPopover({
+  anchorRef,
+  open,
+  onClose,
+  onEmojiClick,
+}: {
+  anchorRef: RefObject<HTMLElement | null>;
+  open: boolean;
+  onClose: () => void;
+  onEmojiClick: (emoji: EmojiClickData) => void;
+}) {
+  const [anchor, setAnchor] = useState<PickerAnchor | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open || !anchorRef.current) return;
+
+    function updatePosition() {
+      if (!anchorRef.current) return;
+      setAnchor(getAnchorPosition(anchorRef.current));
+    }
+
+    updatePosition();
+
+    const onDocMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const clickedAnchor = anchorRef.current?.contains(target);
+      const clickedPopover = popoverRef.current?.contains(target);
+
+      if (!clickedAnchor && !clickedPopover) onClose();
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    document.addEventListener("mousedown", onDocMouseDown);
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+      document.removeEventListener("mousedown", onDocMouseDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, onClose, anchorRef]);
+
+  if (!open || !anchor) return null;
+
+  const pickerWidth = 350;
+  const pickerHeight = 435;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  const spaceBelow = viewportHeight - (anchor.top + anchor.height);
+  const openAbove = spaceBelow < pickerHeight + 16;
+
+  let left = anchor.left;
+  if (left + pickerWidth > viewportWidth - 12) {
+    left = Math.max(12, viewportWidth - pickerWidth - 12);
+  }
+
+  const top = openAbove
+    ? Math.max(12, anchor.top - pickerHeight - 8)
+    : Math.min(
+        viewportHeight - pickerHeight - 12,
+        anchor.top + anchor.height + 8,
+      );
+
+  return createPortal(
+    <div
+      ref={popoverRef}
+      className="news-emoji-popover"
+      style={{
+        position: "fixed",
+        top,
+        left,
+        zIndex: 10050,
+      }}
+    >
+      <EmojiPicker
+        theme={Theme.DARK}
+        onEmojiClick={onEmojiClick}
+        lazyLoadEmojis
+        previewConfig={{ showPreview: false }}
+      />
+    </div>,
+    document.body,
+  );
+}
+
+
+
 export default function NewsStoryPage() {
   const nav = useNavigate();
   const { id } = useParams();
   const newsId = Number(id);
 
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [story, setStory] = useState<NewsDetail | null>(null);
   const [recent, setRecent] = useState<NewsItem[]>([]);
   const [comments, setComments] = useState<NewsComment[]>([]);
+  const [commentPage, setCommentPage] = useState(1);
+  const [commentTotalPages, setCommentTotalPages] = useState(1);
+  const [commentTotal, setCommentTotal] = useState(0);
   const [commentBody, setCommentBody] = useState("");
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [commentEmojiOpen, setCommentEmojiOpen] = useState(false);
+  const commentEmojiBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  const [reactionPickerFor, setReactionPickerFor] = useState<number | null>(
+    null,
+  );
+  const reactionButtonRefs = useRef<Record<number, HTMLButtonElement | null>>(
+    {},
+  );
 
   const canComment = !!user;
 
@@ -63,6 +243,7 @@ export default function NewsStoryPage() {
       return 0;
     }
   });
+
   const [cooldownText, setCooldownText] = useState("");
 
   useEffect(() => {
@@ -82,22 +263,24 @@ export default function NewsStoryPage() {
 
     (async () => {
       try {
-        if (!Number.isFinite(newsId) || newsId <= 0)
+        if (!Number.isFinite(newsId) || newsId <= 0) {
           throw new Error("Invalid story id.");
+        }
 
-        const [s, r, c] = await Promise.all([
+        const [s, r] = await Promise.all([
           api.getNewsById(newsId),
           api.getRecentNews(newsId, 6),
-          api.getNewsComments(newsId),
         ]);
 
         if (!alive) return;
+
         setStory(s);
         setRecent(r);
-        setComments(c);
       } catch (e: any) {
         if (!alive) return;
-        setError(e?.message || "Failed to load story.");
+        const msg = e?.message || "Failed to load story.";
+        setError(msg);
+        showToast(msg, "error");
       } finally {
         if (!alive) return;
         setLoading(false);
@@ -107,7 +290,34 @@ export default function NewsStoryPage() {
     return () => {
       alive = false;
     };
-  }, [newsId]);
+  }, [newsId, showToast]);
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        const res = await api.getNewsComments(
+          newsId,
+          commentPage,
+          COMMENTS_PER_PAGE,
+        );
+
+        if (!alive) return;
+
+        setComments(Array.isArray(res.items) ? res.items : []);
+        setCommentTotalPages(Number(res.pagination?.totalPages ?? 1));
+        setCommentTotal(Number(res.pagination?.total ?? 0));
+      } catch {
+        if (!alive) return;
+        setComments([]);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [newsId, commentPage]);
 
   useEffect(() => {
     if (!cooldownUntil) return;
@@ -129,8 +339,13 @@ export default function NewsStoryPage() {
     }, 250);
 
     const left = cooldownUntil - Date.now();
-    if (left > 0)
+    if (left > 0) {
       setCooldownText(`You can comment again in ${fmtCountdown(left)}`);
+    }
+
+    return () => window.clearInterval(t);
+  }, [cooldownUntil, COOLDOWN_KEY]);
+
   const safeStoryHtml = useMemo(() => {
     const html = story?.story || "";
     return DOMPurify.sanitize(html, {
@@ -140,48 +355,80 @@ export default function NewsStoryPage() {
     });
   }, [story?.story]);
 
-
-    return () => window.clearInterval(t);
-  }, [cooldownUntil, COOLDOWN_KEY]);
-
   const metaText = useMemo(() => {
     if (!story) return "";
     const d = fmtDate(story.createdAt);
     return `${story.author}${d ? ` • ${d}` : ""}`;
   }, [story]);
 
+  const storyImage = useMemo(() => {
+    if (!story) return "";
+    return resolveNewsPreview(
+      (story as any).imageUrl ||
+        (story as any).image ||
+        (story as any).imagePath ||
+        "",
+    );
+  }, [story]);
+
+  const recentWithImages = useMemo(() => {
+    return recent.map((item) => ({
+      ...item,
+      resolvedImage: resolveNewsPreview(
+        (item as any).imageUrl ||
+          (item as any).image ||
+          (item as any).imagePath ||
+          "",
+      ),
+    }));
+  }, [recent]);
+
   const isCooldownActive = canComment && cooldownUntil > Date.now();
+
+  async function refreshComments(page = 1) {
+    const res = await api.getNewsComments(newsId, page, COMMENTS_PER_PAGE);
+    setComments(Array.isArray(res.items) ? res.items : []);
+    setCommentTotalPages(Number(res.pagination?.totalPages ?? 1));
+    setCommentTotal(Number(res.pagination?.total ?? 0));
+  }
 
   async function submitComment() {
     const body = commentBody.trim();
     if (!body) return;
 
     if (!canComment) {
-      alert("You must be logged in to comment.");
+      showToast("You must be logged in to comment.", "warning");
       return;
     }
 
     if (isCooldownActive) {
-      alert(cooldownText || "Please wait before commenting again.");
+      showToast(
+        cooldownText || "Please wait before commenting again.",
+        "warning",
+      );
       return;
     }
 
     try {
       setPosting(true);
 
-      const posted = await api.postNewsComment(newsId, body);
-
-      setComments((prev) => [posted, ...prev]);
+      await api.postNewsComment(newsId, body);
       setCommentBody("");
+      setCommentEmojiOpen(false);
 
       const until = Date.now() + COMMENT_COOLDOWN_MS;
       setCooldownUntil(until);
+
       try {
         localStorage.setItem(COOLDOWN_KEY, String(until));
       } catch {}
+
+      setCommentPage(1);
+      await refreshComments(1);
+      showToast("Comment posted successfully.", "success");
     } catch (e: any) {
       const msg = e?.message || "Failed to post comment.";
-      alert(msg);
+      showToast(msg, "error");
 
       if (String(msg).toLowerCase().includes("wait")) {
         const until = Date.now() + COMMENT_COOLDOWN_MS;
@@ -195,29 +442,35 @@ export default function NewsStoryPage() {
     }
   }
 
-  async function toggleReaction(
-    commentId: number,
-    reaction: "thumbs_up" | "smile",
-  ) {
-    if (!canComment) {
-      alert("You must be logged in to react.");
-      return;
-    }
-
-    try {
-      const r = await api.toggleCommentReaction(commentId, reaction);
-
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === commentId
-            ? { ...c, reactions: r.reactions, myReactions: r.myReactions }
-            : c,
-        ),
-      );
-    } catch (e: any) {
-      alert(e?.message || "Failed to react.");
-    }
+async function toggleReaction(commentId: number, reaction: string) {
+  if (!canComment) {
+    showToast("You must be logged in to react.", "warning");
+    return;
   }
+
+  try {
+    const r = await api.toggleCommentReaction(commentId, reaction);
+
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? {
+              ...c,
+              reactions: r.reactions,
+              myReactions: r.myReactions,
+            }
+          : c,
+      ),
+    );
+  } catch (e: any) {
+    showToast(e?.message || "Failed to react.", "error");
+  }
+}
+
+  function handleCommentEmojiPick(emojiData: EmojiClickData) {
+    setCommentBody((prev) => `${prev}${emojiData.emoji}`);
+  }
+
 
   return (
     <SiteLayout active="home">
@@ -236,18 +489,22 @@ export default function NewsStoryPage() {
               ) : (
                 <>
                   <div className="news-hero">
-                    <img
-                      className="news-hero-img"
-                      src={story.imageUrl}
-                      alt={story.title}
-                    />
+                    {storyImage ? (
+                      <img
+                        className="news-hero-img"
+                        src={storyImage}
+                        alt={story.title}
+                      />
+                    ) : (
+                      <div className="news-hero-img news-hero-img--empty" />
+                    )}
                   </div>
 
                   <h1 className="news-h1">{story.title}</h1>
 
                   <div
                     className="news-story"
-                    dangerouslySetInnerHTML={{ __html: story }}
+                    dangerouslySetInnerHTML={{ __html: safeStoryHtml }}
                   />
 
                   <div className="news-footer">
@@ -255,7 +512,9 @@ export default function NewsStoryPage() {
                   </div>
 
                   <div className="news-comments">
-                    <div className="news-comments-head">Comments</div>
+                    <div className="news-comments-head">
+                      Comments ({commentTotal})
+                    </div>
 
                     {!canComment ? (
                       <div className="muted">
@@ -271,6 +530,18 @@ export default function NewsStoryPage() {
                           rows={3}
                           disabled={posting || isCooldownActive}
                         />
+
+                        <div className="news-comment-toolbar">
+                          <button
+                            ref={commentEmojiBtnRef}
+                            type="button"
+                            className="btn"
+                            onClick={() => setCommentEmojiOpen((prev) => !prev)}
+                            disabled={posting || isCooldownActive}
+                          >
+                            😊 Emoji
+                          </button>
+                        </div>
 
                         {isCooldownActive && (
                           <div className="muted" style={{ marginTop: 6 }}>
@@ -292,6 +563,13 @@ export default function NewsStoryPage() {
                         >
                           {posting ? "Posting..." : "Post Comment"}
                         </button>
+
+                        <EmojiPopover
+                          anchorRef={commentEmojiBtnRef}
+                          open={commentEmojiOpen}
+                          onClose={() => setCommentEmojiOpen(false)}
+                          onEmojiClick={handleCommentEmojiPick}
+                        />
                       </div>
                     )}
 
@@ -300,15 +578,13 @@ export default function NewsStoryPage() {
                         <div className="muted">No comments yet.</div>
                       ) : (
                         comments.map((c) => {
-                          const thumbsUpCount = Number(
-                            c.reactions?.thumbs_up ?? 0,
-                          );
-                          const smileCount = Number(c.reactions?.smile ?? 0);
-                          const my = Array.isArray(c.myReactions)
-                            ? c.myReactions
-                            : [];
-                          const hasThumbsUp = my.includes("thumbs_up");
-                          const hasSmile = my.includes("smile");
+                         const reactions = c.reactions || {};
+                         const my = Array.isArray(c.myReactions)
+                           ? c.myReactions
+                           : [];
+                         const reactionEntries = Object.entries(reactions).sort(
+                           (a, b) => b[1] - a[1],
+                         );
 
                           return (
                             <div className="news-comment" key={c.id}>
@@ -324,44 +600,101 @@ export default function NewsStoryPage() {
                               <div className="news-comment-body">{c.body}</div>
 
                               <div className="comment-actions">
-                                <button
-                                  type="button"
-                                  className={`react-btn ${hasThumbsUp ? "active" : ""}`}
-                                  onClick={() =>
-                                    toggleReaction(c.id, "thumbs_up")
-                                  }
-                                >
-                                  👍 <span>{thumbsUpCount}</span>
-                                </button>
+                                {reactionEntries.map(([emoji, count]) => {
+                                  const active = my.includes(emoji);
+
+                                  return (
+                                    <button
+                                      key={emoji}
+                                      type="button"
+                                      className={`react-btn ${active ? "active" : ""}`}
+                                      onClick={() =>
+                                        toggleReaction(c.id, emoji)
+                                      }
+                                    >
+                                      {emoji} <span>{count}</span>
+                                    </button>
+                                  );
+                                })}
 
                                 <button
+                                  ref={(el) => {
+                                    reactionButtonRefs.current[c.id] = el;
+                                  }}
                                   type="button"
-                                  className={`react-btn ${hasSmile ? "active" : ""}`}
-                                  onClick={() => toggleReaction(c.id, "smile")}
+                                  className="react-btn react-btn--picker"
+                                  onClick={() =>
+                                    setReactionPickerFor(
+                                      reactionPickerFor === c.id ? null : c.id,
+                                    )
+                                  }
                                 >
-                                  😊 <span>{smileCount}</span>
+                                  ➕ React
                                 </button>
+
+                                <EmojiPopover
+                                  anchorRef={{
+                                    current: reactionButtonRefs.current[c.id],
+                                  }}
+                                  open={reactionPickerFor === c.id}
+                                  onClose={() => setReactionPickerFor(null)}
+                                  onEmojiClick={(emojiData) => {
+                                    setReactionPickerFor(null);
+                                    void toggleReaction(c.id, emojiData.emoji);
+                                  }}
+                                />
                               </div>
                             </div>
                           );
                         })
                       )}
                     </div>
+
+                    {commentTotalPages > 1 && (
+                      <div className="news-comment-pagination">
+                        <button
+                          type="button"
+                          className="btn"
+                          disabled={commentPage <= 1}
+                          onClick={() =>
+                            setCommentPage((p) => Math.max(1, p - 1))
+                          }
+                        >
+                          Previous
+                        </button>
+
+                        <div className="muted" style={{ alignSelf: "center" }}>
+                          Page {commentPage} of {commentTotalPages}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="btn"
+                          disabled={commentPage >= commentTotalPages}
+                          onClick={() =>
+                            setCommentPage((p) =>
+                              Math.min(commentTotalPages, p + 1),
+                            )
+                          }
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
             </div>
           </section>
 
-          {/* RIGHT SIDEBAR */}
           <aside className="panel news-side recent-news-panel">
             <div className="panel-head">RECENT NEWS</div>
             <div className="panel-body">
-              {recent.length === 0 ? (
+              {recentWithImages.length === 0 ? (
                 <div className="muted">No recent articles.</div>
               ) : (
                 <div className="recent-list">
-                  {recent.map((n) => (
+                  {recentWithImages.map((n) => (
                     <button
                       key={n.id}
                       type="button"
@@ -369,8 +702,13 @@ export default function NewsStoryPage() {
                       onClick={() => nav(`/news/${n.id}`)}
                     >
                       <div className="recent-thumb">
-                        <img src={n.imageUrl} alt={n.title} />
+                        {n.resolvedImage ? (
+                          <img src={n.resolvedImage} alt={n.title} />
+                        ) : (
+                          <div className="recent-thumb__empty" />
+                        )}
                       </div>
+
                       <div className="recent-info">
                         <div className="recent-title">{n.title}</div>
                         <div className="recent-meta muted">

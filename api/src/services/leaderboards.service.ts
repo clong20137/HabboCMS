@@ -5,16 +5,23 @@ import { leaderboardByField } from "../repositories/users.repo";
 
 export const LEADERBOARD_FIELDS = new Set([
   "credits",
-  "bank_amount",
+  "bank_credits",
   "kills",
   "deaths",
   "punches_thrown",
-  "punches_received",
-  "arrests_made",
-  "arrests_amount",
-  "damage_dealt",
+  "punches_landed",
+  "damage_inflicted",
   "damage_received",
-  "kd",
+  "robberies",
+  "arrests",
+  "xp",
+  "arena_wins",
+  "arena_losses",
+  "strength",
+  "defense",
+  "stamina",
+  "gathering",
+  "knowledge",
 ]);
 
 export async function getLeaderboard(

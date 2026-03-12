@@ -9,22 +9,39 @@ export type UserRow = RowDataPacket & {
   rank: number;
 
   credits?: number;
-  bank_amount?: number;
-  kd?: number;
+  bank_credits?: number;
 
   kills?: number;
   deaths?: number;
+  robberies?: number;
+  arrests?: number;
   punches_thrown?: number;
-  punches_received?: number;
-  arrests_made?: number;
-  arrests_amount?: number;
-  damage_dealt?: number;
+  punches_landed?: number;
+  damage_inflicted?: number;
   damage_received?: number;
 
-  health?: number;
+  strength?: number;
+  knowledge?: number;
+  gathering?: number;
+  defense?: number;
+  stamina?: number;
+  stat_points?: number;
+  stats_setup_done?: number;
+
+  current_health?: number;
   max_health?: number;
   energy?: number;
   max_energy?: number;
+  hunger?: number;
+  max_hunger?: number;
+  is_dead?: number;
+  xp?: number;
+  max_xp?: number;
+
+  arena_wins?: number;
+  arena_losses?: number;
+  is_passive?: number;
+  virtual_room_id?: number;
 
   motto?: string | null;
   look?: string | null;
