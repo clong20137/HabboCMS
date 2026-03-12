@@ -28,6 +28,244 @@ hkRouter.get("/me", (req, res) => {
   });
 });
 
+
+type DashboardMetric = "registrations" | "credits" | "online_peak" | "shifts_worked";
+type DashboardRange = "7d" | "30d" | "90d" | "1y";
+
+function getDashboardDays(rangeRaw: any): number {
+  const range = String(rangeRaw || "30d").toLowerCase();
+  if (range === "7d") return 7;
+  if (range === "90d") return 90;
+  if (range === "1y") return 365;
+  return 30;
+}
+
+function getDashboardRange(rangeRaw: any): DashboardRange {
+  const range = String(rangeRaw || "30d").toLowerCase();
+  if (range === "7d" || range === "30d" || range === "90d" || range === "1y") return range;
+  return "30d";
+}
+
+function getDashboardMetric(metricRaw: any): DashboardMetric {
+  const metric = String(metricRaw || "registrations").toLowerCase();
+  if (metric === "credits" || metric === "online_peak" || metric === "shifts_worked") return metric as DashboardMetric;
+  return "registrations";
+}
+
+async function ensureDashboardSnapshotsTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS hk_dashboard_snapshots (
+      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      captured_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      online_count INT NOT NULL DEFAULT 0,
+      total_credits BIGINT NOT NULL DEFAULT 0,
+      total_users INT NOT NULL DEFAULT 0,
+      total_shifts_worked BIGINT NOT NULL DEFAULT 0,
+      KEY idx_captured_at (captured_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `);
+}
+
+async function captureDashboardSnapshotIfNeeded() {
+  await ensureDashboardSnapshotsTable();
+
+  const [lastRows] = await pool.query<RowDataPacket[]>(
+    `SELECT UNIX_TIMESTAMP(captured_at) AS ts FROM hk_dashboard_snapshots ORDER BY id DESC LIMIT 1`,
+  );
+
+  const lastTs = lastRows.length ? Number((lastRows[0] as any).ts || 0) : 0;
+  const nowTs = Math.floor(Date.now() / 1000);
+
+  if (lastTs && nowTs - lastTs < 300) return;
+
+  const [onlineRows] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) AS cnt FROM users WHERE online = 1`,
+  );
+  const currentOnline = Number((onlineRows[0] as any)?.cnt || 0);
+
+  const [creditRows] = await pool.query<RowDataPacket[]>(`
+    SELECT
+      COALESCE((SELECT SUM(COALESCE(credits, 0)) FROM users), 0) +
+      COALESCE((SELECT SUM(COALESCE(bank_credits, 0)) FROM user_stats), 0) AS totalCredits
+  `);
+  const totalCredits = Number((creditRows[0] as any)?.totalCredits || 0);
+
+  const [userRows] = await pool.query<RowDataPacket[]>(`SELECT COUNT(*) AS cnt FROM users`);
+  const totalUsers = Number((userRows[0] as any)?.cnt || 0);
+
+  const [shiftRows] = await pool.query<RowDataPacket[]>(
+    `SELECT COALESCE(SUM(COALESCE(shifts_worked, 0)), 0) AS totalShifts FROM user_stats`,
+  );
+  const totalShiftsWorked = Number((shiftRows[0] as any)?.totalShifts || 0);
+
+  await pool.query(
+    `INSERT INTO hk_dashboard_snapshots (online_count, total_credits, total_users, total_shifts_worked) VALUES (?, ?, ?, ?)`,
+    [currentOnline, totalCredits, totalUsers, totalShiftsWorked],
+  );
+}
+
+function buildDenseDateSeries(days: number, map: Map<string, number>) {
+  const out: Array<{ label: string; value: number }> = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const label = `${d.getMonth() + 1}/${d.getDate()}`;
+    out.push({ label, value: Number(map.get(key) || 0) });
+  }
+
+  return out;
+}
+
+async function getDashboardSummary() {
+  await captureDashboardSnapshotIfNeeded();
+
+  const [rows] = await pool.query<RowDataPacket[]>(`
+    SELECT
+      (SELECT COUNT(*) FROM users) AS totalUsers,
+      (SELECT COUNT(*) FROM users WHERE FROM_UNIXTIME(CAST(account_created AS UNSIGNED)) >= NOW() - INTERVAL 7 DAY) AS usersLast7Days,
+      (SELECT COUNT(*) FROM users WHERE FROM_UNIXTIME(CAST(account_created AS UNSIGNED)) >= NOW() - INTERVAL 30 DAY) AS usersLast30Days,
+      (SELECT COUNT(*) FROM users WHERE online = 1) AS currentOnlineUsers,
+      (SELECT COALESCE(SUM(COALESCE(credits, 0)), 0) FROM users) + (SELECT COALESCE(SUM(COALESCE(bank_credits, 0)), 0) FROM user_stats) AS totalCredits,
+      (SELECT COALESCE(MAX(online_count), 0) FROM hk_dashboard_snapshots) AS peakConcurrentUsers,
+      (SELECT COALESCE(SUM(COALESCE(shifts_worked, 0)), 0) FROM user_stats) AS shiftsWorkedTotal
+  `);
+
+  let mostActiveHour = 0;
+  try {
+    const [hourRows] = await pool.query<RowDataPacket[]>(`
+      SELECT HOUR(created_at) AS hourValue, COUNT(*) AS cnt
+      FROM login_history
+      WHERE created_at >= NOW() - INTERVAL 30 DAY
+      GROUP BY HOUR(created_at)
+      ORDER BY cnt DESC, hourValue ASC
+      LIMIT 1
+    `);
+    if (hourRows.length) mostActiveHour = Number((hourRows[0] as any).hourValue || 0);
+  } catch {}
+
+  const row: any = rows[0] || {};
+  return {
+    totalUsers: Number(row.totalUsers || 0),
+    usersLast7Days: Number(row.usersLast7Days || 0),
+    usersLast30Days: Number(row.usersLast30Days || 0),
+    totalCredits: Number(row.totalCredits || 0),
+    peakConcurrentUsers: Number(row.peakConcurrentUsers || 0),
+    currentOnlineUsers: Number(row.currentOnlineUsers || 0),
+    mostActiveHour,
+    shiftsWorkedTotal: Number(row.shiftsWorkedTotal || 0),
+  };
+}
+
+async function getDashboardTrend(metric: DashboardMetric, range: DashboardRange) {
+  const days = getDashboardDays(range);
+  if (metric !== "registrations") await captureDashboardSnapshotIfNeeded();
+
+  if (metric === "registrations") {
+    const [rows] = await pool.query<RowDataPacket[]>(`
+      SELECT DATE(FROM_UNIXTIME(CAST(account_created AS UNSIGNED))) AS d, COUNT(*) AS cnt
+      FROM users
+      WHERE FROM_UNIXTIME(CAST(account_created AS UNSIGNED)) >= NOW() - INTERVAL ? DAY
+      GROUP BY DATE(FROM_UNIXTIME(CAST(account_created AS UNSIGNED)))
+      ORDER BY d ASC
+    `, [days]);
+
+    const m = new Map<string, number>();
+    for (const row of rows as any[]) {
+      const key = String(row.d).slice(0, 10);
+      m.set(key, Number(row.cnt || 0));
+    }
+    return buildDenseDateSeries(days, m);
+  }
+
+  const column = metric === "credits" ? "MAX(total_credits)" : metric === "online_peak" ? "MAX(online_count)" : "MAX(total_shifts_worked)";
+  const [rows] = await pool.query<RowDataPacket[]>(`
+    SELECT DATE(captured_at) AS d, ${column} AS value
+    FROM hk_dashboard_snapshots
+    WHERE captured_at >= NOW() - INTERVAL ? DAY
+    GROUP BY DATE(captured_at)
+    ORDER BY d ASC
+  `, [days]);
+
+  const m = new Map<string, number>();
+  for (const row of rows as any[]) {
+    const key = String(row.d).slice(0, 10);
+    m.set(key, Number(row.value || 0));
+  }
+  return buildDenseDateSeries(days, m);
+}
+
+async function getDashboardActivity(range: DashboardRange) {
+  const days = getDashboardDays(range);
+  let rows: RowDataPacket[] = [];
+
+  try {
+    const [loginRows] = await pool.query<RowDataPacket[]>(`
+      SELECT HOUR(created_at) AS h, COUNT(*) AS cnt
+      FROM login_history
+      WHERE created_at >= NOW() - INTERVAL ? DAY
+      GROUP BY HOUR(created_at)
+      ORDER BY h ASC
+    `, [days]);
+    rows = loginRows;
+  } catch {
+    await captureDashboardSnapshotIfNeeded();
+    const [snapshotRows] = await pool.query<RowDataPacket[]>(`
+      SELECT HOUR(captured_at) AS h, AVG(online_count) AS cnt
+      FROM hk_dashboard_snapshots
+      WHERE captured_at >= NOW() - INTERVAL ? DAY
+      GROUP BY HOUR(captured_at)
+      ORDER BY h ASC
+    `, [days]);
+    rows = snapshotRows;
+  }
+
+  const map = new Map<number, number>();
+  for (const row of rows as any[]) map.set(Number(row.h || 0), Number(row.cnt || 0));
+
+  return Array.from({ length: 24 }, (_, hour) => ({
+    hour,
+    label: (() => { const suffix = hour >= 12 ? "PM" : "AM"; const normalized = hour % 12 || 12; return `${normalized}${suffix}`; })(),
+    value: Number(map.get(hour) || 0),
+  }));
+}
+
+hkRouter.get("/dashboard", async (_req, res) => {
+  try {
+    const summary = await getDashboardSummary();
+    return res.json({ ok: true, summary });
+  } catch (e: any) {
+    console.error("HK DASHBOARD SUMMARY ERROR:", e);
+    return res.status(500).json({ error: e?.message || "Failed to load dashboard." });
+  }
+});
+
+hkRouter.get("/dashboard/trends", async (req, res) => {
+  try {
+    const metric = getDashboardMetric(req.query.metric);
+    const range = getDashboardRange(req.query.range);
+    const points = await getDashboardTrend(metric, range);
+    return res.json({ ok: true, metric, range, points });
+  } catch (e: any) {
+    console.error("HK DASHBOARD TRENDS ERROR:", e);
+    return res.status(500).json({ error: e?.message || "Failed to load dashboard trends." });
+  }
+});
+
+hkRouter.get("/dashboard/activity", async (req, res) => {
+  try {
+    const range = getDashboardRange(req.query.range);
+    const hourly = await getDashboardActivity(range);
+    return res.json({ ok: true, range, hourly });
+  } catch (e: any) {
+    console.error("HK DASHBOARD ACTIVITY ERROR:", e);
+    return res.status(500).json({ error: e?.message || "Failed to load dashboard activity." });
+  }
+});
+
 /* =========================
 BANS (HOUSEKEEPING ADMIN)
 Table: bans
@@ -805,76 +1043,81 @@ SERVER SETTINGS (Table: server_settings)
 - description (text)
 Rank 7 only
 ========================= */
-
 type ServerSettingRow = RowDataPacket & {
-  key: string;
-  value: string;
-  description: string | null;
+key: string;
+value: string;
 };
 
-// GET list
 hkRouter.get(
-  "/server-settings",
-  requireHKPermission("hk.server_settings.edit"),
-  async (_req, res) => {
-    try {
-      const [rows] = await pool.query<ServerSettingRow[]>(
-        `
-SELECT \`key\`, \`value\`, \`description\`
-FROM server_settings
+"/server-settings",
+requireHKPermission("hk.server_settings.edit"),
+async (_req, res) => {
+try {
+const [rows] = await pool.query<ServerSettingRow[]>(
+`
+SELECT \`key\`, \`value\`
+FROM emulator_settings
 ORDER BY \`key\` ASC
 `,
-      );
-
-      return res.json({
-        ok: true,
-        items: rows.map((r) => ({
-          key: String(r.key),
-          value: String(r.value ?? ""),
-          description: r.description ? String(r.description) : "",
-        })),
-      });
-    } catch (e) {
-      console.error("HK SERVER SETTINGS LIST ERROR:", e);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
 );
 
-// PUT update one
+return res.json({
+ok: true,
+items: rows.map((r) => ({
+key: String(r.key),
+value: String(r.value ?? ""),
+description: "",
+})),
+});
+} catch (e) {
+console.error("HK SERVER SETTINGS LIST ERROR:", e);
+return res.status(500).json({ error: "Server error" });
+}
+},
+);
+
 hkRouter.put(
-  "/server-settings/:key",
-  requireHKPermission("hk.server_settings.edit"),
-  async (req, res) => {
-    try {
-      const key = String(req.params.key ?? "").trim();
-      const value = String(req.body?.value ?? "");
+"/server-settings/:key",
+requireHKPermission("hk.server_settings.edit"),
+async (req, res) => {
+try {
+const key = String(req.params.key ?? "").trim();
+const value = String(req.body?.value ?? "");
 
-      if (!key) return res.status(400).json({ error: "Key is required." });
-      if (key.length > 255)
-        return res.status(400).json({ error: "Key is too long." });
+if (!key) {
+return res.status(400).json({ error: "Key is required." });
+}
 
-      const [exists] = await pool.query<RowDataPacket[]>(
-        "SELECT `key` FROM server_settings WHERE `key` = ? LIMIT 1",
-        [key],
-      );
+if (key.length > 100) {
+return res.status(400).json({ error: "Key is too long." });
+}
 
-      if (!exists.length) {
-        return res.status(404).json({ error: "Setting not found." });
-      }
+if (value.length > 512) {
+return res.status(400).json({ error: "Value is too long." });
+}
 
-      await pool.query(
-        "UPDATE server_settings SET `value` = ? WHERE `key` = ? LIMIT 1",
-        [value, key],
-      );
-
-      return res.json({ ok: true });
-    } catch (e) {
-      console.error("HK SERVER SETTINGS UPDATE ERROR:", e);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
+const [exists] = await pool.query<RowDataPacket[]>(
+"SELECT `key` FROM emulator_settings WHERE `key` = ? LIMIT 1",
+[key],
 );
+
+if (!exists.length) {
+return res.status(404).json({ error: "Setting not found." });
+}
+
+await pool.query(
+"UPDATE emulator_settings SET `value` = ? WHERE `key` = ? LIMIT 1",
+[value, key],
+);
+
+return res.json({ ok: true });
+} catch (e) {
+console.error("HK SERVER SETTINGS UPDATE ERROR:", e);
+return res.status(500).json({ error: "Server error" });
+}
+},
+);
+
 
 /* =========================
 USERS (view/edit)

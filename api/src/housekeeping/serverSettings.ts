@@ -6,7 +6,6 @@ import { requireHKPermission } from "./middleware";
 type ServerSettingRow = RowDataPacket & {
   key: string;
   value: string;
-  description: string | null;
 };
 
 function normalizeKey(k: any) {
@@ -14,24 +13,19 @@ function normalizeKey(k: any) {
 }
 
 function normalizeValue(v: any) {
-  // server_settings.value is TEXT, allow any string
   return String(v ?? "");
 }
 
 export function registerServerSettingsRoutes(hkRouter: Router) {
-  /**
-   * GET all server settings
-   * rank 7 only to access/edit (per your request)
-   */
   hkRouter.get(
     "/server-settings",
-    requireHKPermission("hk.server_settings.edit"), // rank7-only permission
+    requireHKPermission("hk.server_settings.edit"),
     async (_req, res) => {
       try {
         const [rows] = await pool.query<ServerSettingRow[]>(
           `
-SELECT \`key\`, \`value\`, \`description\`
-FROM server_settings
+SELECT \`key\`, \`value\`
+FROM emulator_settings
 ORDER BY \`key\` ASC
 `,
         );
@@ -41,7 +35,6 @@ ORDER BY \`key\` ASC
           items: rows.map((r) => ({
             key: String(r.key),
             value: String(r.value ?? ""),
-            description: r.description ? String(r.description) : "",
           })),
         });
       } catch (e) {
@@ -51,10 +44,6 @@ ORDER BY \`key\` ASC
     },
   );
 
-  /**
-   * PUT update one setting value
-   * rank 7 only
-   */
   hkRouter.put(
     "/server-settings/:key",
     requireHKPermission("hk.server_settings.edit"),
@@ -63,21 +52,29 @@ ORDER BY \`key\` ASC
         const key = normalizeKey(req.params.key);
         const value = normalizeValue(req.body?.value);
 
-        if (!key) return res.status(400).json({ error: "Key is required." });
-        if (key.length > 255)
-          return res.status(400).json({ error: "Key is too long." });
+        if (!key) {
+          return res.status(400).json({ error: "Key is required." });
+        }
 
-        // must exist (don’t silently create random keys)
+        if (key.length > 100) {
+          return res.status(400).json({ error: "Key is too long." });
+        }
+
+        if (value.length > 512) {
+          return res.status(400).json({ error: "Value is too long." });
+        }
+
         const [existing] = await pool.query<RowDataPacket[]>(
-          "SELECT `key` FROM server_settings WHERE `key` = ? LIMIT 1",
+          "SELECT `key` FROM emulator_settings WHERE `key` = ? LIMIT 1",
           [key],
         );
+
         if (!existing.length) {
           return res.status(404).json({ error: "Setting not found." });
         }
 
         await pool.query(
-          "UPDATE server_settings SET `value` = ? WHERE `key` = ? LIMIT 1",
+          "UPDATE emulator_settings SET `value` = ? WHERE `key` = ? LIMIT 1",
           [value, key],
         );
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { hkRequest } from "../../api/hkApi";
 import { Link } from "react-router-dom";
+import { useToast } from "../../ui/toast/ToastContext";
 
 import editIcon from "../../assets/housekeeping/edit.png";
 import deleteIcon from "../../assets/housekeeping/delete.png";
@@ -115,6 +116,7 @@ function resolveNewsImageSrc(n: NewsItem) {
 }
 
 export default function HKNewsList() {
+  const { showToast } = useToast();
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<NewsItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -145,6 +147,7 @@ export default function HKNewsList() {
       setTotal(Number(data.total || 0));
     } catch (e: any) {
       setError(e?.message || "Failed to load news.");
+      showToast(e?.message || "Failed to load news.", "error");
     } finally {
       setLoading(false);
     }
@@ -169,8 +172,9 @@ export default function HKNewsList() {
     try {
       await hkFetch(`/api/hk/news/${id}`, { method: "DELETE" });
       await load();
+      showToast("Article deleted successfully.", "success");
     } catch (e: any) {
-      alert(e?.message || "Failed to delete article.");
+      showToast(e?.message || "Failed to delete article.", "error");
     }
   }
 

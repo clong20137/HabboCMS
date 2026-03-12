@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { hkRequest } from "../../api/hkApi";
+import { useToast } from "../../ui/toast/ToastContext";
 
 import editIcon from "../../assets/housekeeping/edit.png";
 import deleteIcon from "../../assets/housekeeping/delete.png";
@@ -41,6 +42,7 @@ async function hkFetch<T>(url: string, opts?: RequestInit): Promise<T> {
 }
 
 export default function HKWordFilter() {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -83,6 +85,7 @@ export default function HKWordFilter() {
       setTotal(Number(data.total || 0));
     } catch (e: any) {
       setError(e?.message || "Failed to load wordfilter.");
+      showToast(e?.message || "Failed to load wordfilter.", "error");
       setItems([]);
       setTotal(0);
     } finally {
@@ -141,8 +144,10 @@ export default function HKWordFilter() {
       setNewStrict(true);
 
       await load();
+      showToast("Word added successfully.", "success");
     } catch (e: any) {
       setError(e?.message || "Failed to add word.");
+      showToast(e?.message || "Failed to add word.", "error");
     } finally {
       setSaving(false);
     }
@@ -168,8 +173,10 @@ export default function HKWordFilter() {
 
       closeEdit();
       await load();
+      showToast("Word updated successfully.", "success");
     } catch (e: any) {
       setError(e?.message || "Failed to update word.");
+      showToast(e?.message || "Failed to update word.", "error");
     } finally {
       setSaving(false);
     }
@@ -189,8 +196,10 @@ export default function HKWordFilter() {
         },
       );
       await load();
+      showToast("Word deleted successfully.", "success");
     } catch (e: any) {
       setError(e?.message || "Failed to delete word.");
+      showToast(e?.message || "Failed to delete word.", "error");
     } finally {
       setSaving(false);
     }

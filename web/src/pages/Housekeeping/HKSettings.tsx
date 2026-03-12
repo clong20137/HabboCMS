@@ -1,18 +1,23 @@
 import { hkRequest } from "../../api/hkApi";
 import { useEffect, useMemo, useState } from "react";
+import { useToast } from "../../ui/toast/ToastContext";
 
 type Props = { me: any };
 
 type SettingItem = {
   key: string;
   value: string;
-  updatedAt: string;
+  updatedAt?: string;
+  description?: string;
 };
 
 async function apiGet<T>(url: string): Promise<T> {
   const r = await fetch(url, { credentials: "include" });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data?.error || data?.message || "Request failed");
+  if (!r.ok)
+    throw new Error(
+      (data as any)?.error || (data as any)?.message || "Request failed",
+    );
   return data as T;
 }
 
@@ -40,14 +45,11 @@ function formatSettingLabel(key: string): string {
     .join(" ");
 }
 
-export default function HKSettings(_props: Props) {
-  // =========================
-  // GENERAL SITE SETTINGS (existing)
-  // =========================
+export default function HKSettings(props: Props) {
+  const { showToast } = useToast();
+
   const [items, setItems] = useState<SettingItem[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const [msg, setMsg] = useState("");
 
   const [keyName, setKeyName] = useState("");
   const [val, setVal] = useState("");
@@ -61,18 +63,14 @@ export default function HKSettings(_props: Props) {
   const [hotelName, setHotelName] = useState("");
   const [hotelNameLoading, setHotelNameLoading] = useState(false);
 
-  // =========================
-  // SERVER SETTINGS (new panel)
-  // =========================
   const [serverItems, setServerItems] = useState<SettingItem[]>([]);
   const [serverLoading, setServerLoading] = useState(false);
   const [serverSavingKey, setServerSavingKey] = useState<string | null>(null);
 
-  const myRank = Number(_props?.me?.user?.rank ?? _props?.me?.rank ?? 0);
+  const myRank = Number(props?.me?.user?.rank ?? props?.me?.rank ?? 0);
   const canEditHotelName = myRank >= 7;
   const canEditServerSettings = myRank >= 7;
 
-  // (kept for compatibility if you were using them)
   const betaFromItems = useMemo(() => {
     const found = items.find((x) => x.key === "beta_mode_enabled");
     if (!found) return null;
@@ -97,7 +95,6 @@ export default function HKSettings(_props: Props) {
         ),
       ]);
 
-      // ---- General settings
       if (generalRes.status === "fulfilled") {
         const list = generalRes.value.items || [];
         setItems(list);
@@ -110,22 +107,23 @@ export default function HKSettings(_props: Props) {
         } catch {
           const found = list.find((x) => x.key === "beta_mode_enabled");
           if (found) setBetaEnabled(String(found.value) === "1");
+          else if (betaFromItems !== null) setBetaEnabled(!!betaFromItems);
         }
 
         const hn = list.find((x) => x.key === "hotel_name");
         if (hn) setHotelName(String(hn.value ?? ""));
+        else if (hotelNameFromItems) setHotelName(hotelNameFromItems);
         else setHotelName("");
       } else {
-        // if general settings fails, still let server settings load
         console.error("HK settings load failed:", generalRes.reason);
+        showToast("Failed to load general settings.", "error");
       }
 
-      // ---- Server settings
       if (serverRes.status === "fulfilled") {
         setServerItems(serverRes.value.items || []);
       } else {
         console.error("HK server settings load failed:", serverRes.reason);
-        // Don't hard fail whole page; just show message.
+        showToast("Failed to load server settings.", "error");
       }
     } finally {
       setLoading(false);
@@ -135,52 +133,50 @@ export default function HKSettings(_props: Props) {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function save() {
     try {
-      setMsg("");
       const k = keyName.trim();
-      if (!k) return setMsg("Key is required.");
+      if (!k) {
+        showToast("Key is required.", "warning");
+        return;
+      }
 
       await apiPut(`/api/hk/settings/${encodeURIComponent(k)}`, { value: val });
 
-      setMsg("Saved.");
       setKeyName("");
       setVal("");
       await load();
+      showToast("Setting saved.", "success");
     } catch (e: any) {
-      setMsg(e?.message || "Save failed");
+      showToast(e?.message || "Save failed", "error");
     }
   }
 
   async function toggleBetaMode() {
     try {
-      setMsg("");
       setBetaLoading(true);
 
       const next = !betaEnabled;
-      setBetaEnabled(next); // optimistic UI
+      setBetaEnabled(next);
 
-      // Preferred: dedicated endpoint
       try {
         await apiPost<{ ok: true; enabled: boolean }>(
           "/api/hk/settings/beta-mode",
           { enabled: next },
         );
       } catch {
-        // Fallback: existing generic setting PUT route
         await apiPut("/api/hk/settings/beta_mode_enabled", {
           value: next ? "1" : "0",
         });
       }
 
-      setMsg(`Beta mode turned ${next ? "ON" : "OFF"}.`);
       await load();
+      showToast(`Beta mode turned ${next ? "ON" : "OFF"}.`, "success");
     } catch (e: any) {
-      setBetaEnabled((v) => !v); // revert
-      setMsg(e?.message || "Failed to toggle beta mode");
+      setBetaEnabled((v) => !v);
+      showToast(e?.message || "Failed to toggle beta mode", "error");
     } finally {
       setBetaLoading(false);
     }
@@ -188,10 +184,17 @@ export default function HKSettings(_props: Props) {
 
   async function addBetaKey() {
     try {
-      setMsg("");
       const code = newBetaKey.trim();
-      if (!code) return setMsg("Please enter a beta key.");
-      if (code.length < 4) return setMsg("Beta key must be at least 4 chars.");
+
+      if (!code) {
+        showToast("Please enter a beta key.", "warning");
+        return;
+      }
+
+      if (code.length < 4) {
+        showToast("Beta key must be at least 4 characters.", "warning");
+        return;
+      }
 
       setBetaKeyLoading(true);
 
@@ -199,10 +202,10 @@ export default function HKSettings(_props: Props) {
         code,
       });
 
-      setMsg("Beta key created.");
       setNewBetaKey("");
+      showToast("Beta key created.", "success");
     } catch (e: any) {
-      setMsg(e?.message || "Failed to create beta key");
+      showToast(e?.message || "Failed to create beta key", "error");
     } finally {
       setBetaKeyLoading(false);
     }
@@ -210,53 +213,53 @@ export default function HKSettings(_props: Props) {
 
   async function saveHotelName() {
     try {
-      setMsg("");
-
       if (!canEditHotelName) {
-        return setMsg("Only Rank 7 can edit Hotel Name.");
+        showToast("Only Rank 7 can edit Hotel Name.", "warning");
+        return;
       }
 
       const v = hotelName.trim();
-      if (!v) return setMsg("Hotel Name is required.");
-      if (v.length > 50)
-        return setMsg("Hotel Name must be 50 characters or less.");
+
+      if (!v) {
+        showToast("Hotel Name is required.", "warning");
+        return;
+      }
+
+      if (v.length > 50) {
+        showToast("Hotel Name must be 50 characters or less.", "warning");
+        return;
+      }
 
       setHotelNameLoading(true);
 
       await apiPut("/api/hk/settings/hotel_name", { value: v });
 
-      setMsg("Hotel Name saved.");
       await load();
+      showToast("Hotel Name saved.", "success");
     } catch (e: any) {
-      setMsg(e?.message || "Failed to save Hotel Name");
+      showToast(e?.message || "Failed to save Hotel Name", "error");
     } finally {
       setHotelNameLoading(false);
     }
   }
 
-  // =========================
-  // SERVER SETTINGS save
-  // =========================
   async function saveServerSetting(key: string, value: string) {
     try {
-      setMsg("");
-
       if (!canEditServerSettings) {
-        return setMsg("Only Rank 7 can edit Server Settings.");
+        showToast("Only Rank 7 can edit Server Settings.", "warning");
+        return;
       }
 
       setServerSavingKey(key);
 
-      // GET /api/hk/server-settings
-      // PUT /api/hk/server-settings/:key { value }
       await apiPut(`/api/hk/server-settings/${encodeURIComponent(key)}`, {
         value,
       });
 
-      setMsg(`${formatSettingLabel(key)} saved.`);
       await load();
+      showToast(`${formatSettingLabel(key)} saved.`, "success");
     } catch (e: any) {
-      setMsg(e?.message || "Failed to save server setting");
+      showToast(e?.message || "Failed to save server setting", "error");
     } finally {
       setServerSavingKey(null);
     }
@@ -264,78 +267,41 @@ export default function HKSettings(_props: Props) {
 
   return (
     <>
-      
       <div className="panel">
         <div className="panel-head">General Site Settings</div>
+
         <div className="panel-body">
-          {/* Row 1: Beta toggle */}
-          <div
-            className="hk-settingRow"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 15 }}>
-                Beta Only Registration
-              </div>
-              <div className="hk-item-sub" style={{ marginTop: 4 }}>
+          <div className="hk-settingRow">
+            <div className="hk-settingInfo">
+              <div className="hk-settingTitle">Beta Only Registration</div>
+              <div className="hk-settingDesc">
                 When enabled, users must enter a valid beta code to register.
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="hk-settingAction">
               <button
                 className={`hk-toggle ${betaEnabled ? "is-on" : "is-off"}`}
                 onClick={toggleBetaMode}
                 disabled={betaLoading}
                 title="Toggle beta-only registration"
-                style={{
-                  minWidth: 96,
-                  padding: "8px 14px",
-                  fontWeight: 900,
-                  borderRadius: 6,
-                  border: "none",
-                  cursor: betaLoading ? "not-allowed" : "pointer",
-                }}
               >
                 {betaLoading ? "Saving..." : betaEnabled ? "ON" : "OFF"}
               </button>
             </div>
           </div>
 
-          {/* Row 2: Create beta key */}
-          <div
-            className="hk-settingRow"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              marginTop: 18,
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 15 }}>
-                Create Beta Key
-              </div>
-              <div className="hk-item-sub" style={{ marginTop: 4 }}>
-                Add a new beta key users can use to register during beta-only
-                mode.
+          <div className="hk-settingRow">
+            <div className="hk-settingInfo">
+              <div className="hk-settingTitle">Create Beta Key</div>
+              <div className="hk-settingDesc">
+                Add a new beta key users can use during beta-only mode.
               </div>
             </div>
 
             <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                justifyContent: "flex-end",
-                flexShrink: 0,
-              }}
+              className="hk-settingAction"
+              style={{ display: "flex", gap: 10, flexWrap: "wrap" }}
             >
               <input
                 className="hk-input"
@@ -349,47 +315,28 @@ export default function HKSettings(_props: Props) {
                 className="btn btn-primary"
                 onClick={addBetaKey}
                 disabled={betaKeyLoading || newBetaKey.trim().length < 4}
-                style={{ whiteSpace: "nowrap" }}
               >
                 {betaKeyLoading ? "Adding..." : "Add"}
               </button>
             </div>
           </div>
 
-          {/* Row 3: Hotel Name */}
-          <div
-            className="hk-settingRow"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              marginTop: 18,
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 15 }}>Hotel Name</div>
-              <div className="hk-item-sub" style={{ marginTop: 4 }}>
+          <div className="hk-settingRow">
+            <div className="hk-settingInfo">
+              <div className="hk-settingTitle">Hotel Name</div>
+              <div className="hk-settingDesc">
                 Updates the prefix used in page titles.
               </div>
               {!canEditHotelName && (
-                <div
-                  className="hk-item-sub"
-                  style={{ marginTop: 6, opacity: 0.85 }}
-                >
+                <div className="hk-settingDesc">
                   <b>Rank 7 only</b> can edit this setting.
                 </div>
               )}
             </div>
 
             <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                justifyContent: "flex-end",
-                flexShrink: 0,
-              }}
+              className="hk-settingAction"
+              style={{ display: "flex", gap: 10, flexWrap: "wrap" }}
             >
               <input
                 className="hk-input"
@@ -405,20 +352,25 @@ export default function HKSettings(_props: Props) {
                 disabled={
                   !canEditHotelName || hotelNameLoading || !hotelName.trim()
                 }
-                style={{ whiteSpace: "nowrap" }}
-                title={!canEditHotelName ? "Rank 7 only" : "Save Hotel Name"}
               >
                 {hotelNameLoading ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
 
-          {/* Optional: generic key/value editor (if you still want it) */}
           <div style={{ marginTop: 22 }}>
             <div style={{ fontWeight: 900, marginBottom: 8 }}>
               Raw Setting Editor
             </div>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
+            >
               <input
                 className="hk-input"
                 value={keyName}
@@ -444,20 +396,15 @@ export default function HKSettings(_props: Props) {
               </button>
             </div>
           </div>
-
-          {msg && <div style={{ fontWeight: 900, marginTop: 14 }}>{msg}</div>}
         </div>
       </div>
 
-      
       <div className="panel" style={{ marginTop: 18 }}>
         <div className="panel-head">Server Settings</div>
+
         <div className="panel-body">
           {!canEditServerSettings && (
-            <div
-              className="hk-item-sub"
-              style={{ marginBottom: 10, opacity: 0.9 }}
-            >
+            <div className="hk-settingDesc" style={{ marginBottom: 10 }}>
               <b>Rank 7 only</b> can edit server settings.
             </div>
           )}
@@ -476,39 +423,30 @@ export default function HKSettings(_props: Props) {
                     key={it.key}
                     className="hk-settingRow"
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 16,
-                      padding: "10px 0",
                       borderBottom: "1px solid rgba(255,255,255,0.06)",
                     }}
                   >
-                    {/* LEFT: pretty label + raw key */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 900, fontSize: 15 }}>
+                    <div className="hk-settingInfo">
+                      <div className="hk-settingTitle">
                         {formatSettingLabel(it.key)}
                       </div>
-                      <div className="hk-item-sub" style={{ marginTop: 4 }}>
-                        Key: <span style={{ opacity: 0.9 }}>{it.key}</span>
-                        {it.updatedAt ? (
+                      <div className="hk-settingDesc">
+                        Key: <span>{it.key}</span>
+                        {it.description ? (
                           <>
                             {" "}
-                            • Updated:{" "}
-                            <span style={{ opacity: 0.9 }}>{it.updatedAt}</span>
+                            • <span>{it.description}</span>
                           </>
                         ) : null}
                       </div>
                     </div>
 
-                    {/* RIGHT: editor + save */}
                     <div
+                      className="hk-settingAction"
                       style={{
                         display: "flex",
-                        alignItems: "center",
                         gap: 10,
-                        justifyContent: "flex-end",
-                        flexShrink: 0,
+                        flexWrap: "wrap",
                       }}
                     >
                       <input
@@ -532,12 +470,6 @@ export default function HKSettings(_props: Props) {
                         onClick={() =>
                           saveServerSetting(it.key, String(it.value ?? ""))
                         }
-                        style={{ whiteSpace: "nowrap" }}
-                        title={
-                          !canEditServerSettings
-                            ? "Rank 7 only"
-                            : "Save setting"
-                        }
                       >
                         {savingThis ? "Saving..." : "Save"}
                       </button>
@@ -547,8 +479,6 @@ export default function HKSettings(_props: Props) {
               })}
             </div>
           )}
-
-          {msg && <div style={{ fontWeight: 900, marginTop: 14 }}>{msg}</div>}
         </div>
       </div>
     </>
