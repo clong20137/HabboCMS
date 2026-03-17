@@ -16,6 +16,19 @@ if (!max || max <= 0) return 0;
 return clampPct((current / max) * 100);
 }
 
+const APP_BASE = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL || "/";
+
+function withBase(url: string) {
+if (!url) return "";
+if (/^(https?:)?\/\//i.test(url)) return url;
+if (url.startsWith("data:") || url.startsWith("blob:")) return url;
+
+const normalizedUrl = url.startsWith("/") ? url : `/${url}`;
+const normalizedBase = APP_BASE.endsWith("/") ? APP_BASE.slice(0, -1) : APP_BASE;
+
+return `${normalizedBase}${normalizedUrl}`;
+}
+
 function normalizeStoredImageValue(rawInput?: string) {
 const raw = String(rawInput || "").trim();
 if (!raw) return "";
@@ -28,27 +41,8 @@ raw.startsWith("blob:")
 return raw;
 }
 
-const normalized = raw.replace(/\\/g, "/");
-return normalized.split("/").pop() || normalized;
+return raw.replace(/\\/g, "/").trim();
 }
-
-const newsImageModules = import.meta.glob(
-"../assets/news/*.{png,jpg,jpeg,gif,webp,avif,svg}",
-{
-eager: true,
-import: "default",
-},
-) as Record<string, string>;
-
-const availableNewsImages = Object.entries(newsImageModules)
-.map(([fullPath, url]) => {
-const fileName = fullPath.split("/").pop() || fullPath;
-return {
-name: fileName,
-url,
-};
-})
-.sort((a, b) => a.name.localeCompare(b.name));
 
 function resolveNewsPreview(rawInput?: string) {
 const normalized = normalizeStoredImageValue(rawInput);
@@ -62,11 +56,19 @@ normalized.startsWith("blob:")
 return normalized;
 }
 
-const found = availableNewsImages.find(
-(x) => x.name.toLowerCase() === normalized.toLowerCase(),
-);
+if (normalized.startsWith("/")) return withBase(normalized);
+if (normalized.startsWith("assets/")) return withBase(`/${normalized}`);
+if (normalized.startsWith("uploads/")) return withBase(`/${normalized}`);
+if (normalized.startsWith("news/")) return withBase(`/assets/${normalized}`);
+if (normalized.startsWith("src/assets/news/")) {
+return withBase(`/${normalized.replace(/^src\//, "")}`);
+}
+if (normalized.startsWith("/src/assets/news/")) {
+return withBase(normalized.replace(/^\/src/, ""));
+}
 
-return found?.url || normalized;
+const fileName = normalized.split("/").pop() || normalized;
+return withBase(`/assets/news/${fileName}`);
 }
 
 const FADE_MS = 300;
@@ -86,7 +88,7 @@ const fadeTimerRef = useRef<number | null>(null);
 useEffect(() => {
 let alive = true;
 
-(async () => {
+void (async () => {
 try {
 const items = await api.getNews(3);
 if (!alive) return;
@@ -132,12 +134,12 @@ window.setTimeout(() => goToSlide(queued), 0);
 useEffect(() => {
 if (news.length <= 1) return;
 
-const t = window.setInterval(() => {
+const timer = window.setInterval(() => {
 const next = (newsIdx + 1) % news.length;
 goToSlide(next);
 }, 10000);
 
-return () => window.clearInterval(t);
+return () => window.clearInterval(timer);
 }, [newsIdx, news.length]);
 
 useEffect(() => {
@@ -181,9 +183,21 @@ const activeNewsImage = useMemo(() => {
 if (!activeNews) return "";
 
 return resolveNewsPreview(
-(activeNews as any).imageUrl ||
-(activeNews as any).image ||
-(activeNews as any).imagePath ||
+(activeNews as NewsItem & {
+imageUrl?: string;
+image?: string;
+imagePath?: string;
+}).imageUrl ||
+(activeNews as NewsItem & {
+imageUrl?: string;
+image?: string;
+imagePath?: string;
+}).image ||
+(activeNews as NewsItem & {
+imageUrl?: string;
+image?: string;
+imagePath?: string;
+}).imagePath ||
 "",
 );
 }, [activeNews]);
@@ -291,9 +305,7 @@ loading="lazy"
 
 <div className="news-overlay">
 <div className="news-overlay__inner">
-<div className="news-title">
-{activeNews.title}
-</div>
+<div className="news-title">{activeNews.title}</div>
 <div className="news-desc">
 {activeNews.description}
 </div>
@@ -304,12 +316,12 @@ by {activeNews.author}
 
 {news.length > 1 && (
 <div className="news-dots">
-{news.map((_, i) => (
+{news.map((_, index) => (
 <button
-key={i}
+key={index}
 type="button"
-className={`news-dot ${i === newsIdx ? "active" : ""}`}
-onClick={() => goToSlide(i)}
+className={`news-dot ${index === newsIdx ? "active" : ""}`}
+onClick={() => goToSlide(index)}
 />
 ))}
 </div>
@@ -367,11 +379,9 @@ fontSize: 12,
 lineHeight: 1.4,
 }}
 >
-Weekly Shifts:{" "}
-{Number(corporation.weeklyShifts ?? 0)}
+Weekly Shifts: {Number(corporation.weeklyShifts ?? 0)}
 <br />
-Total Shifts:{" "}
-{Number(corporation.totalShifts ?? 0)}
+Total Shifts: {Number(corporation.totalShifts ?? 0)}
 </div>
 </div>
 </div>
