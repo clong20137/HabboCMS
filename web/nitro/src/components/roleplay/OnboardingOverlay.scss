@@ -1,0 +1,351 @@
+/* ==========================================================================
+OnboardingOverlay.scss (safe ‘hole’ backdrop, highlight & arrows)
+========================================================================== */
+
+body.ob-block-scroll {
+    overflow: hidden !important;
+}
+
+/* Root overlay (portal into <body>) */
+.ob-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    /* above everything */
+    pointer-events: none;
+    /* let clicks through except on cards/buttons */
+    font-family: var(--font-greek-theme, system-ui, sans-serif);
+}
+
+/* ---------- Backdrop with a “hole” (no CSS masks, no browser bugs) ------- */
+.ob-backdrop {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+
+    &::before {
+        content: '';
+        position: absolute;
+        left: var(--hole-x, -2000px);
+        top: var(--hole-y, -2000px);
+        width: var(--hole-w, 0);
+        height: var(--hole-h, 0);
+        border-radius: var(--hole-radius, 10px);
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, .66);
+        /* the dimmer */
+        transition:
+            left .18s ease, top .18s ease,
+            width .18s ease, height .18s ease,
+            box-shadow .18s ease;
+    }
+}
+
+/* Subtle ring (glow) around the focused element */
+.ob-target-ring {
+    position: absolute;
+    left: calc(var(--hole-x, -2000px) - 4px);
+    top: calc(var(--hole-y, -2000px) - 4px);
+    width: calc(var(--hole-w, 0px) + 8px);
+    height: calc(var(--hole-h, 0px) + 8px);
+    border-radius: calc(var(--hole-radius, 10px) + 4px);
+    box-shadow:
+        0 0 0 2px #ffd766,
+        0 0 12px 2px rgba(255, 215, 102, .55),
+        inset 0 0 0 9999px rgba(0, 0, 0, 0);
+    /* transparent center */
+    animation: obPulse 1.4s ease-in-out infinite;
+    pointer-events: none;
+    transition: left .18s ease, top .18s ease, width .18s ease, height .18s ease;
+}
+
+@keyframes obPulse {
+    0% {
+        box-shadow: 0 0 0 2px #ffd766, 0 0 12px 2px rgba(255, 215, 102, .55), inset 0 0 0 9999px rgba(0, 0, 0, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 0 2px #ffe38d, 0 0 20px 4px rgba(255, 227, 141, .75), inset 0 0 0 9999px rgba(0, 0, 0, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 2px #ffd766, 0 0 12px 2px rgba(255, 215, 102, .55), inset 0 0 0 9999px rgba(0, 0, 0, 0);
+    }
+}
+
+/* Extra: pulse directly on the live DOM node while it is targeted */
+.ob-pulse-target {
+    position: relative;
+    z-index: 1;
+    animation: obTargetPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes obTargetPulse {
+    0% {
+        filter: drop-shadow(0 0 0 rgba(255, 215, 102, 0));
+        transform: translateZ(0);
+    }
+
+    50% {
+        filter: drop-shadow(0 0 6px rgba(255, 215, 102, .7));
+    }
+
+    100% {
+        filter: drop-shadow(0 0 0 rgba(255, 215, 102, 0));
+    }
+}
+
+/* ---------- Cards -------------------------------------------------------- */
+
+.ob-coach-card,
+.ob-welcome-card {
+    position: absolute;
+    max-width: 420px;
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 14px 16px 12px 16px;
+    pointer-events: auto;
+    /* clickable */
+    background: #0e466d;
+    border: 2px solid #205f86;
+    box-shadow:
+        0 10px 24px rgba(0, 0, 0, .22),
+        0 2px 0 rgba(0, 0, 0, .25),
+        inset 0 -4px rgba(0, 0, 0, .12);
+
+    /* smoother movement + fade/scale between steps */
+    opacity: 0;
+    transform: translateY(4px) scale(.98);
+    transition:
+        left .18s ease,
+        top .18s ease,
+        opacity .18s ease,
+        transform .18s ease;
+}
+
+.ob-card-enter {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* layout when a step image is present */
+.ob-illustration {
+    margin-bottom: 8px;
+
+    img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        image-rendering: pixelated;
+    }
+}
+
+.ob-content {
+    /* wraps title/body/actions so illustration can sit above */
+}
+
+/* Title + body */
+.ob-title {
+    font-weight: 600;
+    font-size: 24px;
+    margin-bottom: 6px;
+    color: #ffffff;
+}
+
+.ob-body {
+    line-height: 1.35;
+    margin-bottom: 10px;
+}
+
+/* Actions */
+.ob-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.ob-btn {
+    min-width: 66px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: solid 1px #277baf;
+    font-weight: 700;
+    cursor: pointer;
+    background: #0a6091;
+    color: #ffffff;
+
+    &.ob-next {
+        background: #04a157;
+        border: solid 1px #adf26c;
+        color: #fff;
+    }
+
+    &.ob-skip {
+        background: #ae1d52;
+        border: solid 1px #d76e8b;
+        color: #fff;
+    }
+
+    &:hover {
+        filter: brightness(1.06);
+    }
+}
+
+/* ---------- Pointer / Arrow (based on placement class) ------------------ */
+.ob-coach-card.place-right::after,
+.ob-coach-card.place-left::after,
+.ob-coach-card.place-top::after,
+.ob-coach-card.place-bottom::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .25));
+}
+
+/* match arrow color to card background */
+$ob-card-bg: #0e466d;
+
+.ob-coach-card.place-right::after {
+    left: -10px;
+    top: 14px;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right: 10px solid $ob-card-bg;
+}
+
+.ob-coach-card.place-left::after {
+    right: -10px;
+    top: 14px;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 10px solid $ob-card-bg;
+}
+
+.ob-coach-card.place-top::after {
+    left: 16px;
+    bottom: -10px;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid $ob-card-bg;
+}
+
+.ob-coach-card.place-bottom::after {
+    left: 16px;
+    top: -10px;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 10px solid $ob-card-bg;
+}
+
+/* ---------- Welcome card variant --------------------------------------- */
+.ob-welcome-card {
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: left;
+    max-width: 520px;
+}
+
+.ob-welcome-title {
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 8px;
+}
+
+.ob-welcome-text {
+    margin: 0 0 10px 0;
+    line-height: 1.35;
+}
+
+/* ---------- Frank bottom-right ----------------------------------------- */
+
+.ob-frank {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+    z-index: 10000;
+    animation: obFrankIn .18s ease-out;
+}
+
+@keyframes obFrankIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ob-frank-img-wrapper {
+    pointer-events: none;
+
+    .ob-frank-img {
+        display: block;
+        width: 72px;
+        height: auto;
+        image-rendering: pixelated;
+    }
+}
+
+.ob-frank-bubble {
+    pointer-events: none;
+    max-width: 260px;
+    background: #f2e0b9;
+    border-radius: 10px;
+    padding: 8px 10px;
+    box-shadow:
+        0 6px 14px rgba(0, 0, 0, .25),
+        0 1px 0 rgba(0, 0, 0, .2);
+    border: 2px solid #c79e53;
+    color: #2b2414;
+    position: relative;
+    font-size: 12px;
+    line-height: 1.3;
+
+    &::after {
+        content: '';
+        position: absolute;
+        right: -10px;
+        bottom: 10px;
+        width: 0;
+        height: 0;
+        border-left: 10px solid #f2e0b9;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+        filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .25));
+    }
+}
+
+.ob-frank-name {
+    font-weight: 800;
+    margin-bottom: 2px;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.ob-frank-text {
+    font-size: 12px;
+}
+
+/* ---------- Safe reduce-motion ----------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .ob-target-ring {
+        animation: none;
+    }
+
+    .ob-backdrop::before,
+    .ob-target-ring,
+    .ob-coach-card,
+    .ob-welcome-card,
+    .ob-frank {
+        transition: none !important;
+        animation: none !important;
+    }
+}

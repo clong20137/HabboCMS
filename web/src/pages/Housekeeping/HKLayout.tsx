@@ -1,10 +1,6 @@
-import React, {
-  PropsWithChildren,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { PropsWithChildren } from "react";
+
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
@@ -20,14 +16,15 @@ import navEdit from "../../assets/navigation/edit.png";
 import hkBansIcon from "../../assets/housekeeping/edit.png";
 import logoutIcon from "../../assets/navigation/logout.gif";
 import InlineColorPicker from "../../components/theme/InlineColorPicker";
+
 import {
   DEFAULT_THEME,
-  ThemeState,
   darken,
   isValidHex,
   normalizeTheme,
   readableText,
 } from "../../theme/themeUtils";
+import type { ThemeState } from "../../theme/themeUtils";
 
 type Props = PropsWithChildren<{}>;
 
@@ -96,13 +93,11 @@ export default function HKLayout({ children }: Props) {
 
   const isLoggedIn = !!user;
 
-  // Apply theme
   useEffect(() => {
     applyThemeVars(theme);
     saveTheme(theme);
   }, [theme]);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     function onDocMouseDown(e: MouseEvent) {
       const el = wrapRef.current;
@@ -113,12 +108,10 @@ export default function HKLayout({ children }: Props) {
     return () => document.removeEventListener("mousedown", onDocMouseDown);
   }, []);
 
-  // Close dropdowns on route change
   useEffect(() => setOpenMenu(null), [location.pathname]);
 
-  // Online count polling
   useEffect(() => {
-    let timer: any;
+    let timer: ReturnType<typeof setInterval>;
 
     async function loadOnlineCount() {
       try {
@@ -134,26 +127,26 @@ export default function HKLayout({ children }: Props) {
     return () => clearInterval(timer);
   }, []);
 
-  // HK permission bootstrap
   useEffect(() => {
     let mounted = true;
 
     async function loadHKMe() {
       setHkLoading(true);
       try {
-        // you already built /api/hk/me
         const res = await fetch("/api/hk/me", { credentials: "include" });
         const data = (await res.json()) as HKMe;
         if (!mounted) return;
 
         if (!res.ok || !data?.ok) {
-          setHk({ ok: false, error: (data as any)?.error || "Access denied." });
+          setHk({ ok: false, error: data?.error || "Access denied." });
         } else {
           setHk(data);
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (!mounted) return;
-        setHk({ ok: false, error: e?.message || "Failed to load HK access." });
+        const message =
+          e instanceof Error ? e.message : "Failed to load HK access.";
+        setHk({ ok: false, error: message });
       } finally {
         if (mounted) setHkLoading(false);
       }
@@ -222,7 +215,6 @@ export default function HKLayout({ children }: Props) {
 
   return (
     <div className="site site--hk" ref={wrapRef}>
-      {/* HEADER */}
       <header
         className="site-header"
         style={{ backgroundImage: `url(${headerBg})` }}
@@ -249,7 +241,6 @@ export default function HKLayout({ children }: Props) {
         </div>
       </header>
 
-      {/* NAV (different links) */}
       <nav className="site-nav site-nav--secondary-gradient">
         <div className="site-nav__inner">
           <div className="nav-left">
@@ -293,7 +284,6 @@ export default function HKLayout({ children }: Props) {
           </div>
 
           <div className="nav-right">
-            {/* THEME EDITOR (optional, same as site) */}
             <div
               className={`nav-dropdown ${openMenu === "theme" ? "open" : ""}`}
             >
@@ -339,7 +329,9 @@ export default function HKLayout({ children }: Props) {
                     <input
                       className="theme-hex theme-hex--pro"
                       value={theme[activeKey]}
-                      onChange={(e) => updateThemeHex(activeKey, e.target.value)}
+                      onChange={(e) =>
+                        updateThemeHex(activeKey, e.target.value)
+                      }
                       placeholder="#RRGGBB"
                       spellCheck={false}
                     />
@@ -370,13 +362,13 @@ export default function HKLayout({ children }: Props) {
                   </div>
 
                   <div className="theme-hint">
-                    <b>Live preview:</b> primary updates the footer automatically.
+                    <b>Live preview:</b> primary updates the footer
+                    automatically.
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ACCOUNT (same) */}
             {isLoggedIn && (
               <div
                 className={`nav-dropdown ${openMenu === "account" ? "open" : ""}`}
@@ -416,13 +408,11 @@ export default function HKLayout({ children }: Props) {
         </div>
       </nav>
 
-      {/* CONTENT */}
       <main
         className="site-content"
         style={{ backgroundImage: `url(${spaceBg})` }}
       >
         <div className="site-content__inner">
-          {/* Gate HK access nicely */}
           {hkLoading ? (
             <div className="panel">
               <div className="panel-head">
@@ -456,7 +446,6 @@ export default function HKLayout({ children }: Props) {
         </div>
       </main>
 
-      {/* FOOTER */}
       <footer className="site-footer">
         <div className="site-footer__inner">
           <div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SiteLayout from "../components/layout/SiteLayout";
 import "../styles/tickets.scss";
 
@@ -171,11 +171,7 @@ export default function Tickets() {
   }, []);
 
   function normalizeMessage(m: any, fallbackTicketId: number): TicketMessage {
-    const senderTypeRaw =
-      m?.senderType ??
-      m?.sender_type ??
-      (m?.is_staff ? "staff" : "user") ??
-      "user";
+   const senderTypeRaw = m?.is_staff ? "staff" : "user";
 
     const senderType: "user" | "staff" =
       senderTypeRaw === "staff" || senderTypeRaw === "user"

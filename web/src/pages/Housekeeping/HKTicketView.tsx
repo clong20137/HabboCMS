@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { hkRequest } from "../../api/hkApi";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 type TicketStatus = "open" | "pending" | "closed";
 
@@ -57,7 +57,6 @@ function fmtDate(s: string) {
 }
 
 export default function HKTicketsView() {
-  const nav = useNavigate();
   const { id } = useParams();
   const ticketId = useMemo(() => Number(id), [id]);
 

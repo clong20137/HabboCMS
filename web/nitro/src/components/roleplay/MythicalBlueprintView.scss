@@ -1,0 +1,299 @@
+.blueprint-module {
+    position: absolute;
+    top: 120px;
+    left: 12%;
+    width: 740px;
+    background: #dfdfdf;
+    border: solid 2px #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22), 0 2px 0 rgba(0, 0, 0, 0.25),
+        inset 0 -4px rgba(0, 0, 0, 0.12);
+    font-size: 12px;
+    color: #000;
+    z-index: 9999;
+    transform-origin: top left;
+    will-change: transform, opacity, box-shadow;
+}
+
+/* same animations as trade/inventory */
+@keyframes invEnter {
+    0% {
+        opacity: 0;
+        transform: translateX(-16px) translateY(-6px) scale(0.985);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0) translateY(0) scale(1);
+    }
+}
+
+@keyframes invExit {
+    0% {
+        opacity: 1;
+        transform: translateX(0) translateY(0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(-12px) translateY(-4px) scale(0.985);
+    }
+}
+
+.blueprint-module.is-entering {
+    animation: invEnter 220ms cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+}
+
+.blueprint-module.is-exiting {
+    animation: invExit 180ms ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .blueprint-module.is-entering,
+    .blueprint-module.is-exiting {
+        animation: none;
+    }
+}
+
+/* header uses your inventory-header + close button classes */
+.blueprint-body {
+    padding: 0 10px 12px;
+}
+
+.blueprint-top {
+    display: grid;
+    grid-template-columns: 1fr 180px 200px;
+    gap: 12px;
+    align-items: start;
+}
+
+.blueprint-side-title {
+    font-size: 14px;
+    font-weight: 800;
+    margin: 2px 0 6px;
+    color: #111;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.blueprint-slots-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    /* tighter */
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.blueprint-slot-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.blueprint-slot-label {
+    font-weight: 800;
+    font-size: 12px;
+    color: #222;
+}
+
+.blueprint-slot {
+    width: 64px;
+    height: 64px;
+}
+
+.blueprint-slot.is-filled {
+    filter: none;
+}
+
+.blueprint-remove {
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-weight: 800;
+    cursor: pointer;
+    border: 2px solid rgba(0, 0, 0, 0.18);
+    background: #ffffff;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+}
+
+.blueprint-remove:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.blueprint-hint {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #333;
+    text-align: center;
+}
+
+.blueprint-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 26px;
+}
+
+.blueprint-session {
+    font-size: 11px;
+    font-weight: 700;
+    color: #222;
+    opacity: 0.9;
+    text-align: center;
+}
+
+.blueprint-outcome-box {
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.blueprint-outcome-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.bp-k {
+    color: #333;
+}
+
+.bp-v {
+    color: #111;
+}
+
+.blueprint-craftable {
+    text-align: center;
+    font-weight: 900;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.blueprint-craftable.yes {
+    background: rgba(74, 163, 212, 0.25);
+}
+
+.blueprint-craftable.no {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+/* Inventory row (ONE ROW of 12) */
+.blueprint-inventory {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.blueprint-inventory-row {
+    display: grid;
+    grid-template-columns: repeat(12, 48px);
+    gap: 6px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    justify-content: space-between;
+}
+
+.blueprint-inv-type {
+    font-size: 10px;
+    font-weight: 800;
+    color: #333;
+    text-align: center;
+    margin-top: 4px;
+    text-transform: lowercase;
+    opacity: 0.85;
+}
+
+.blueprint-bottom-hint {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #333;
+    text-align: center;
+}
+
+/* fallback id if icon missing */
+.slot-fallback-id {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.65);
+}
+
+/* reuse your trade/inventory slot look */
+.inventory-slot {
+    width: 48px;
+    height: 48px;
+    background-color: rgb(214, 214, 214);
+    border: 1px solid rgba(119, 119, 119, 0.19);
+    border-radius: 6px;
+    box-shadow: #00000052 0 1px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    position: relative;
+    overflow: hidden;
+    padding: 2px;
+    transition: background-color 120ms ease, box-shadow 150ms ease;
+}
+
+.inventory-slot:hover {
+    background-color: #8e8e8e;
+}
+
+.inventory-item-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inventory-item-wrapper img {
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.quantity-label {
+    position: absolute;
+    bottom: 4px;
+    right: 6px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 1px 4px;
+    font-size: 10px;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.slot-number.centered {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    color: rgba(0, 0, 0, 0.55);
+    pointer-events: none;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}

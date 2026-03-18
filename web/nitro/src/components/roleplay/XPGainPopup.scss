@@ -1,0 +1,188 @@
+.xp-gain-popup {
+    --xp-duration: 6000ms;
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 10000;
+    /* make sure it's on top */
+    animation: xp-float var(--xp-duration) ease-out forwards;
+
+    @keyframes xp-float {
+        0% {
+            transform: translateX(-50%) translateY(25px) scale(0.7);
+            opacity: 0;
+            filter: blur(3px);
+        }
+
+        10% {
+            transform: translateX(-50%) translateY(0) scale(1.05);
+            opacity: 1;
+            filter: blur(0);
+        }
+
+        20% {
+            transform: translateX(-50%) translateY(-4px) scale(1);
+        }
+
+        85% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-15px);
+        }
+
+        100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-40px) scale(0.9);
+        }
+    }
+
+    &::before {
+        content: "";
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        background: radial-gradient(circle, rgba(63, 211, 123, .45), transparent 70%);
+        border-radius: 50%;
+        z-index: -1;
+        filter: blur(14px);
+        opacity: .6;
+        animation: xp-pulse 2.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes xp-pulse {
+        0% {
+            transform: scale(1);
+            opacity: .5;
+        }
+
+        100% {
+            transform: scale(1.25);
+            opacity: .8;
+        }
+    }
+
+    .xp-ring {
+        position: relative;
+        width: 72px;
+        height: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform-origin: center;
+        animation: ring-bounce 1s ease-out 1;
+
+        @keyframes ring-bounce {
+            0% {
+                transform: scale(.7);
+                filter: brightness(.6);
+            }
+
+            40% {
+                transform: scale(1.2);
+                filter: brightness(1.3);
+            }
+
+            100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+        }
+
+        svg {
+            position: absolute;
+            inset: 0;
+        }
+
+        .ring-bg {
+            stroke: rgba(255, 255, 255, .12);
+        }
+
+        .ring-fg {
+            stroke: url(#xpGrad);
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 6px rgba(63, 211, 123, .7));
+            transition: stroke-dashoffset .8s ease-out;
+        }
+
+        .xp-avatar {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 3px rgba(63, 211, 123, .4),
+                0 0 15px rgba(63, 211, 123, .3);
+            animation: avatar-glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes avatar-glow {
+            0% {
+                box-shadow: 0 0 0 3px rgba(63, 211, 123, .3), 0 0 10px rgba(63, 211, 123, .25);
+            }
+
+            100% {
+                box-shadow: 0 0 0 4px rgba(63, 211, 123, .6), 0 0 20px rgba(63, 211, 123, .5);
+            }
+        }
+
+        /* Sparkle particles - use CSS vars from TSX: --tx, --ty, --p-delay, --p-scale */
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle, #ffffff 15%, rgba(63, 211, 123, 1) 35%, rgba(63, 211, 123, 0.0) 70%);
+            transform: translate(-50%, -50%) scale(.7);
+            filter: drop-shadow(0 0 4px rgba(63, 211, 123, .9));
+            opacity: 0;
+            animation: particle-pop 1200ms ease-out forwards;
+            animation-delay: var(--p-delay, 0ms);
+        }
+
+        @keyframes particle-pop {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(calc(var(--p-scale, 1) * .6));
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, -40px))) scale(var(--p-scale, 1.2));
+            }
+        }
+    }
+
+    .xp-meta {
+        margin-top: 10px;
+        text-align: center;
+        font-weight: 800;
+        letter-spacing: .5px;
+        color: #e7fbea;
+        text-shadow: 0 0 6px rgba(63, 211, 123, .75), 0 0 14px rgba(63, 211, 123, .4);
+        font-size: 15px;
+        animation: xp-flash 1.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes xp-flash {
+        0% {
+            color: #b6ffd1;
+            text-shadow: 0 0 4px rgba(63, 211, 123, .6);
+        }
+
+        100% {
+            color: #ffffff;
+            text-shadow: 0 0 12px rgba(63, 211, 123, 1);
+        }
+    }
+}

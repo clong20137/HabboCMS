@@ -1,0 +1,369 @@
+.nitro-right-compact {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: auto;
+    max-width: 340px;
+    pointer-events: none;
+    z-index: 1000;
+
+    * {
+        pointer-events: auto;
+    }
+}
+
+/* Cards + layout */
+.rs-card {
+    background: #0d6091;
+    border: 3px solid #2077ab;
+    border-radius: 12px;
+    padding: 4px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22),
+        0 2px 0 rgba(0, 0, 0, 0.25),
+        inset 0 -4px rgba(0, 0, 0, 0.12);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-gap: 10px;
+    font-family: var(--font-greek-theme);
+    color: #fff;
+    position: relative;
+    z-index: 1005;
+    overflow: visible;
+}
+
+.rs-mini {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0d6091;
+    border: 3px solid #2077ab;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22),
+        0 2px 0 rgba(0, 0, 0, 0.25),
+        inset 0 -4px rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 8px;
+    font-family: var(--font-greek-theme);
+    font-size: 12px;
+    color: #e9eef5;
+    gap: 10px;
+    position: relative;
+    z-index: 1010;
+    overflow: visible;
+}
+
+.rs-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    min-width: 0;
+    white-space: normal;
+}
+
+.rs-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chip-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.rs-title-text {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+/* ---- CHIP STYLING ---- */
+.chip {
+    background: #0d4366;
+    border: solid 1px #2685BC;
+    padding: 6px 10px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+    gap: 6px;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .22),
+        0 2px 0 rgba(0, 0, 0, .25),
+        inset 0 -4px rgba(0, 0, 0, .12);
+    transition: filter 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.chip--icon {
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    min-width: 28px;
+}
+
+.chip--icon>button {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background-color: transparent;
+    /* <-- not the shorthand */
+    appearance: none;
+    display: inline-block;
+    line-height: 0;
+}
+
+/* hover lift + glow */
+.chip:hover:not(.chip--static),
+.chip:focus-visible:not(.chip--static) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 2px 6px rgba(0, 0, 0, 0.24);
+    cursor: pointer;
+    outline: none;
+}
+
+.chip:focus-visible {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85),
+        0 0 0 4px rgba(34, 66, 93, 0.85);
+    transform: none;
+}
+
+/* static (non-interactive) chips */
+.chip--static {
+    cursor: default;
+    pointer-events: none;
+}
+
+.chip--static>* {
+    pointer-events: auto;
+}
+
+/* Icons */
+.ico {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+.ico-time {
+    background-image: url("../../icons/clock.png");
+}
+
+.ico-coin {
+    background-image: url("../../icons/coins.png");
+}
+
+.ico-zone {
+    background-image: url("../../icons/room.png");
+    height: 24px;
+    width: 24px;
+}
+
+.ico-flag {
+    background-image: url("../../icons/online.png");
+    width: 24px;
+    height: 24px;
+}
+
+.ico-chatlog {
+    background-image: url("../../icons/chatlog.png");
+}
+
+.ico-gear {
+    background-image: url("../../icons/settings.png");
+}
+
+.ico-diamond {
+    background-image: url("../../icons/diamonds.png");
+    /* or diamonds.gif if you have an animated one */
+}
+
+.ico-chatlog,
+.ico-gear {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.ico-chatlog:hover,
+.ico-gear:hover {
+    transform: scale(1.08);
+    filter: brightness(1.15);
+}
+
+/* =======================================================
+TOOLTIP FIX: BELOW CHIP, ARROW POINTS UP
+======================================================= */
+.has-tip {
+    position: relative;
+    z-index: 1020;
+}
+
+.has-tip[data-tip]::after,
+.has-tip[data-tip]::before {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    z-index: 1030;
+}
+
+/* tooltip box BELOW the chip */
+.has-tip[data-tip]::after {
+    content: attr(data-tip);
+    top: calc(100% + 10px);
+    background: #171a1f;
+    color: #fff;
+    font: 600 12px/1.1 var(--font-greek-theme, inherit);
+    padding: 6px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35),
+        inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* arrow under tooltip, pointing UP toward chip */
+.has-tip[data-tip]::before {
+    content: "";
+    top: calc(100% + 4px);
+    border: 6px solid transparent;
+    border-bottom-color: #171a1f;
+}
+
+.has-tip:hover::after,
+.has-tip:hover::before,
+.has-tip:focus-visible::after,
+.has-tip:focus-visible::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(2px);
+}
+
+/* =======================================================
+RESPONSIVE
+======================================================= */
+@media (max-width: 480px) {
+    .rs-title-text {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+    }
+
+    .nitro-right-compact {
+        max-width: 300px;
+    }
+}
+
+/* =======================================================
+RIGHT SIDE: MOBILE COMPACT / VERTICAL
+======================================================= */
+@media (max-width: 600px) {
+    .nitro-right-compact {
+        right: 6px;
+        top: 6px;
+        display: flex;
+        flex-direction: column;
+        /* clears compact stats pill */
+        width: 100px;
+        /* ↓ from ~180–340 */
+        gap: 6px;
+        z-index: 2200;
+    }
+
+    .rs-mini {
+        gap: 4px;
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .rs-mini .chip {
+        width: 100%;
+        min-height: 28px;
+        padding: 5px 6px;
+        font-size: 11px;
+        justify-content: flex-start;
+    }
+
+    .ico {
+        width: 16px;
+        height: 16px;
+    }
+
+    .rs-card {
+        display: flex;
+        flex-direction: column;
+        padding: 6px;
+        width: 100%;
+    }
+
+    .rs-title {
+        font-size: 12px;
+        gap: 4px;
+    }
+
+    .rs-title .chip-title {
+        width: 100%;
+    }
+
+    .rs-title-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .rs-counter {
+        margin-top: 4px;
+        gap: 4px;
+    }
+
+    .rs-counter .chip {
+        padding: 5px 6px;
+        font-size: 11px;
+    }
+
+    .rs-counter .chip--icon {
+        padding: 5px;
+    }
+}
+
+/* ultra small */
+@media (max-width: 380px) {
+    .nitro-right-compact {
+        width: 140px;
+        max-width: 140px;
+    }
+}
+
+
+/* Tiny phones: squeeze a bit more */
+@media (max-width: 380px) {
+    .nitro-right-compact {
+        width: 168px;
+        max-width: 168px;
+    }
+
+    .rs-mini .chip,
+    .rs-card .chip {
+        padding: 6px;
+    }
+
+    .rs-title {
+        font-size: 12px;
+    }
+}

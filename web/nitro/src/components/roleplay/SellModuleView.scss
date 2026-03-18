@@ -1,0 +1,152 @@
+.sell-module {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    z-index: 1000;
+    background: #dfdfdf;
+    border: solid 2px #000;
+    border-radius: 10px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, .45);
+    font-size: 12px;
+    width: 330px;
+
+    &.pop-in {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+
+    .sell-header {
+        background: linear-gradient(180deg, #bd9426, #bd9426 50%, #cdb267 0, #cdb267);
+        color: #fff;
+        padding: 8px 10px;
+        font-size: 20px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            box-shadow: 0 0 0 1.6px #fff;
+            border: solid 2px #921911;
+            background: repeating-linear-gradient(#f55041, #f55041, 50%, #c23027 0, #c23027);
+
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.5s;
+
+        }
+
+        .close-btn:hover {
+            background: repeating-linear-gradient(#f55749, #f55749, 50%, #d33a32 0, #d33a32);
+            transition: 0.5s;
+            transition: 0.5s;
+        }
+    }
+
+    select,
+    input {
+        width: 100%;
+        margin: 8px 0;
+        padding: 4px;
+        font-size: 14px;
+    }
+
+    .sell-btn {
+        width: 100%;
+        padding: 8px;
+        background: #2ecc71;
+        border: none;
+        color: white;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .sell-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-auto-rows: auto;
+        gap: 12px;
+        max-height: calc(3 * 120px); // Assuming ~120px per row
+        overflow-y: auto;
+        padding-right: 8px; // for scrollbar clearance
+        padding: 6px;
+
+    }
+
+    .sell-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .sell-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+    }
+
+    .sell-item-row {
+        display: flex;
+        align-items: center;
+        background: #e0ddd5;
+        border-radius: 6px;
+        gap: 12px;
+    }
+
+    .sell-item-icon {
+        width: 48px;
+        height: 48px;
+        border: 1px solid #555;
+        background: #7a7a7a;
+        border-radius: 4px;
+        box-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 #000;
+        border: 2px solid #000;
+    }
+
+    .sell-item-info {
+        flex: 1;
+        color: #000000;
+
+        p {
+            margin: 2px 0;
+            font-size: 12px;
+            color: #000000;
+        }
+    }
+
+    .sell-item-action {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        input {
+            width: 60px;
+            padding: 4px;
+            border-radius: 4px;
+            border: 1px solid #666;
+            background: #2a2a2a;
+            color: white;
+            text-align: center;
+        }
+
+        button {
+            display: inline-block;
+            padding: 6px 12px;
+            border: 1px solid #000;
+            border-bottom-width: 2px;
+            border-radius: 4px;
+            background: linear-gradient(180deg, #ffd166 0, #ffd166 50%, #e0aa24 50%, #e0aa24);
+            cursor: pointer;
+            color: white;
+            font-size: 13px;
+        }
+    }
+
+
+}

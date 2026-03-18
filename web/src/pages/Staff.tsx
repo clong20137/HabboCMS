@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SiteLayout from "../components/layout/SiteLayout";
 import { api } from "../api/client";
 import { useHotelTitle } from "../hooks/useHotelTitle";
@@ -77,7 +77,7 @@ export default function Staff() {
         // GET /api/staff -> { ok: true, staff: StaffMember[] }
         const res = await api.getStaff();
 
-        const staff: StaffMember[] = res?.staff ?? res?.data?.staff ?? [];
+  const staff: StaffMember[] = res?.staff ?? [];
 
         // Group by rank (only ranks we care about for now: 7..4)
         const byRank = new Map<number, StaffMember[]>();

@@ -59,7 +59,7 @@ async function fetchWithTimeout(
   const t = window.setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
   try {
-    const signal = mergeAbortSignals(init.signal, controller.signal);
+const signal = mergeAbortSignals(init.signal ?? undefined, controller.signal);
     return await fetch(input, { ...init, signal });
   } finally {
     window.clearTimeout(t);

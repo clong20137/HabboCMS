@@ -1,0 +1,269 @@
+.gang-claim {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1002;
+
+    pointer-events: none;
+
+    &__card {
+        width: 260px;
+        pointer-events: auto;
+
+        background: #e7d7b6;
+        /* beige body */
+        border: 3px solid #2a6f9e;
+        /* casino-like blue border */
+        border-radius: 10px;
+
+        box-shadow:
+            0 2px #000000b3,
+            0 0 0 1px #000000b3;
+
+        overflow: hidden;
+        color: #2b2b2b;
+        text-align: center;
+    }
+
+    /* header bar (casino widget vibe) */
+    &__header {
+        background: #0d6091;
+        border-bottom: 2px solid #2077ab;
+        padding: 8px 10px;
+        box-shadow: inset 0 -2px rgba(0, 0, 0, .18);
+    }
+
+    &__header-title {
+        color: #fff;
+        font-weight: 900;
+        font-size: 12px;
+        letter-spacing: .8px;
+        text-transform: uppercase;
+        text-shadow: 0 1px 0 rgba(0, 0, 0, .35);
+    }
+
+    /* body spacing */
+    &__status,
+    &__owner,
+    &__gangline,
+    &__btn {
+        margin-left: 12px;
+        margin-right: 12px;
+    }
+
+    &__status {
+        margin-top: 10px;
+        margin-bottom: 8px;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+
+        font-size: 12px;
+        font-weight: 800;
+        color: #2b2b2b;
+
+        &-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #27c46b;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, .12);
+        }
+
+        &--contested .gang-claim__status-dot {
+            background: #ffc400;
+        }
+
+        &--canceled .gang-claim__status-dot {
+            background: #999;
+        }
+
+        &--captured .gang-claim__status-dot {
+            background: #ffcf4d;
+        }
+
+        &--capturing .gang-claim__status-dot {
+            background: #4aa3ff;
+        }
+    }
+
+    /* =========================================================
+SHIELD = progress bar (bottom fill)
+- Base (owner) split: --shield-a / --shield-b
+- Fill (attacker) split: --att-a / --att-b
+- Height controlled by --pct (e.g. "42%")
+========================================================= */
+    &__shield {
+        position: relative;
+        margin: 10px auto 10px;
+        width: 58px;
+        height: 70px;
+
+        /* Defaults (React overrides) */
+        --shield-a: #E06C35;
+        --shield-b: #3A4253;
+        --att-a: #9ad1ff;
+        --att-b: #4a74a3;
+        --pct: 0%;
+
+        background:
+            linear-gradient(90deg, var(--att-a) 50%, var(--att-b) 0) bottom / 100% var(--pct) no-repeat,
+            linear-gradient(90deg, var(--shield-a) 50%, var(--shield-b) 0);
+
+        -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 88"><path d="M36 2l31 12v24c0 22-14 38-31 48C19 76 5 60 5 38V14L36 2z"/></svg>') no-repeat center/contain;
+        mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 88"><path d="M36 2l31 12v24c0 22-14 38-31 48C19 76 5 60 5 38V14L36 2z"/></svg>') no-repeat center/contain;
+
+        /* Olympus/casino outline */
+        filter: drop-shadow(0 2px rgba(0, 0, 0, .35));
+        transition: transform .12s ease, filter .12s ease;
+
+        &.is-contested {
+            filter: drop-shadow(0 2px rgba(0, 0, 0, .35)) saturate(1.15);
+            transform: scale(1.02);
+        }
+
+        &.is-complete {
+            animation: shieldPulse .45s ease-out 1;
+
+            &::after {
+                content: "";
+                position: absolute;
+                inset: -3px;
+                background:
+                    linear-gradient(120deg,
+                        rgba(255, 255, 255, 0) 20%,
+                        rgba(255, 255, 255, .55) 40%,
+                        rgba(255, 255, 255, 0) 60%) 0 0 / 200% 100% no-repeat;
+                -webkit-mask: inherit;
+                mask: inherit;
+                animation: shieldShine .55s ease-out 1;
+                pointer-events: none;
+            }
+        }
+    }
+
+    @keyframes shieldPulse {
+        0% {
+            transform: scale(1);
+        }
+
+        35% {
+            transform: scale(1.04);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @keyframes shieldShine {
+        0% {
+            background-position: -120% 0;
+            opacity: 0;
+        }
+
+        15% {
+            opacity: .9;
+        }
+
+        100% {
+            background-position: 120% 0;
+            opacity: 0;
+        }
+    }
+
+    &__shield-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        font-weight: 900;
+        font-size: 16px;
+        color: #fff;
+
+        text-shadow:
+            0 1px 0 rgba(0, 0, 0, .55),
+            0 0 4px rgba(0, 0, 0, .35);
+
+        user-select: none;
+        pointer-events: none;
+    }
+
+    &__owner {
+        margin-top: 2px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #2b2b2b;
+    }
+
+    &__gangline {
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 11px;
+        font-weight: 700;
+        color: rgba(0, 0, 0, .75);
+
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    &__gang--att {
+        color: #0d6091;
+    }
+
+    &__gang--def {
+        color: #b06c00;
+    }
+
+    /* Habbo/Olympus style button */
+    &__btn {
+        width: calc(100% - 24px);
+        height: 34px;
+        margin: 0 12px 12px;
+
+        border-radius: 8px;
+        border: 2px solid #1d7f2f;
+
+        background: #39b54a;
+        color: #fff;
+
+        font-weight: 900;
+        font-size: 12px;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+
+        box-shadow:
+            0 2px rgba(0, 0, 0, .35),
+            inset 0 -3px rgba(0, 0, 0, .12);
+
+        cursor: pointer;
+        transition: transform .12s ease, filter .12s ease, opacity .12s ease;
+
+        &:hover {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+        }
+
+        &:active {
+            transform: translateY(1px);
+            filter: brightness(.98);
+        }
+
+        &:disabled,
+        &[aria-disabled="true"] {
+            opacity: .55;
+            cursor: default;
+            transform: none;
+            filter: none;
+            border-color: rgba(0, 0, 0, .25);
+        }
+    }
+}

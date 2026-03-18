@@ -1,4 +1,6 @@
-import { PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { PropsWithChildren } from "react";
+
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
@@ -22,12 +24,12 @@ import logoutIcon from "../../assets/navigation/logout.gif";
 import InlineColorPicker from "../theme/InlineColorPicker";
 import {
   DEFAULT_THEME,
-  ThemeState,
   darken,
   isValidHex,
   normalizeTheme,
   readableText,
 } from "../../theme/themeUtils";
+import type { ThemeState } from "../../theme/themeUtils";
 
 type Props = PropsWithChildren<{
   active?: "home" | "community" | "store" | "me" | "support";
@@ -45,8 +47,8 @@ function applyThemeVars(t: ThemeState) {
   const themeSecondary = t.secondary || DEFAULT_THEME.secondary;
   const footer = themePrimary;
 
-  const primary = themeSecondary; // headers/buttons/etc
-  const secondary = themePrimary; // everything else
+  const primary = themeSecondary;
+  const secondary = themePrimary;
 
   root.style.setProperty("--primary-color", primary);
   root.style.setProperty("--primary-dark", darken(primary, 0.18));
@@ -90,13 +92,11 @@ export default function SiteLayout({ children, active = "home" }: Props) {
 
   const isLoggedIn = !!user;
 
-  // Apply theme whenever SAVED theme changes
   useEffect(() => {
     applyThemeVars(theme);
     saveTheme(theme);
   }, [theme]);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     function onDocMouseDown(e: MouseEvent) {
       const el = wrapRef.current;
@@ -107,12 +107,10 @@ export default function SiteLayout({ children, active = "home" }: Props) {
     return () => document.removeEventListener("mousedown", onDocMouseDown);
   }, []);
 
-  // Close dropdowns on route change
   useEffect(() => setOpenMenu(null), [location.pathname]);
 
-  // Online count polling
   useEffect(() => {
-    let timer: any;
+    let timer: ReturnType<typeof setInterval>;
 
     async function loadOnlineCount() {
       try {
@@ -144,7 +142,6 @@ export default function SiteLayout({ children, active = "home" }: Props) {
   function toggleMenu(name: OpenMenu) {
     if (!isLoggedIn && name === "account") return;
     setOpenMenu((prev) => (prev === name ? null : name));
-
   }
 
   const activeKey: "primary" | "secondary" =
@@ -185,7 +182,6 @@ export default function SiteLayout({ children, active = "home" }: Props) {
 
   return (
     <div className="site" ref={wrapRef}>
-      {/* HEADER */}
       <header
         className="site-header"
         style={{ backgroundImage: `url(${headerBg})` }}
@@ -218,7 +214,6 @@ export default function SiteLayout({ children, active = "home" }: Props) {
         </div>
       </header>
 
-      {/* NAV */}
       <nav className="site-nav site-nav--secondary-gradient">
         <div className="site-nav__inner">
           <div className="nav-left">
@@ -271,7 +266,6 @@ export default function SiteLayout({ children, active = "home" }: Props) {
           </div>
 
           <div className="nav-right">
-            {/* THEME EDITOR */}
             <div
               className={`nav-dropdown ${openMenu === "theme" ? "open" : ""}`}
             >
@@ -317,7 +311,9 @@ export default function SiteLayout({ children, active = "home" }: Props) {
                     <input
                       className="theme-hex theme-hex--pro"
                       value={theme[activeKey]}
-                      onChange={(e) => updateThemeHex(activeKey, e.target.value)}
+                      onChange={(e) =>
+                        updateThemeHex(activeKey, e.target.value)
+                      }
                       placeholder="#RRGGBB"
                       spellCheck={false}
                     />
@@ -348,13 +344,13 @@ export default function SiteLayout({ children, active = "home" }: Props) {
                   </div>
 
                   <div className="theme-hint">
-                    <b>Live preview:</b> primary updates the footer automatically.
+                    <b>Live preview:</b> primary updates the footer
+                    automatically.
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ACCOUNT DROPDOWN */}
             {isLoggedIn && (
               <div
                 className={`nav-dropdown ${openMenu === "account" ? "open" : ""}`}
@@ -399,7 +395,6 @@ export default function SiteLayout({ children, active = "home" }: Props) {
         </div>
       </nav>
 
-      {/* CONTENT */}
       <main
         className="site-content"
         style={{ backgroundImage: `url(${spaceBg})` }}
@@ -407,7 +402,6 @@ export default function SiteLayout({ children, active = "home" }: Props) {
         <div className="site-content__inner">{children}</div>
       </main>
 
-      {/* FOOTER */}
       <footer className="site-footer">
         <div className="site-footer__inner">
           <div>
