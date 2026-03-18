@@ -18,6 +18,7 @@ import "./styles/Housekeeping/housekeeping.scss";
 import "./styles/Housekeeping/housekeeping-wordfilter.scss";
 import "./styles/Housekeeping/housekeeping-tickets.scss";
 import "./styles/toast.scss";
+import "./styles/install.scss";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

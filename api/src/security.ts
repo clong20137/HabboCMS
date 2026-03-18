@@ -34,6 +34,7 @@ function requireCsrf(req: Request, res: Response, next: NextFunction) {
   const method = req.method.toUpperCase();
   const isMutation = method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
   if (!isMutation) return next();
+  if (req.path.startsWith("/api/install")) return next();
 
   const csrfCookie = String((req as any).cookies?.[CSRF_COOKIE] || "");
   const csrfHeader = String(req.headers["x-csrf-token"] || "");
@@ -92,6 +93,7 @@ function requireJsonOnly() {
     const method = req.method.toUpperCase();
     const isMutation = method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
     if (!isMutation) return next();
+    if (req.path.startsWith("/api/install")) return next();
 
     // Allow empty-body mutations (e.g., POST /auth/sso, POST /auth/logout)
     const hasBody =

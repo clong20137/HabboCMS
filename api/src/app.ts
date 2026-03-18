@@ -12,6 +12,7 @@ import { leaderboardsRouter } from "./routes/leaderboards.routes";
 import { newsRouter } from "./routes/news.routes";
 import { ticketsRouter } from "./routes/tickets.routes";
 import { staffRouter } from "./routes/staff.routes";
+import { installRouter } from "./routes/install.routes";
 
 export function createApp() {
   const app = express();
@@ -21,6 +22,9 @@ export function createApp() {
 
   // CSRF token issuer (client calls this once, then sends X-CSRF-Token on mutations)
   app.get("/api/auth/csrf", csrfIssueToken);
+
+  // Public installer routes (first-run only)
+  app.use("/api/install", installRouter);
 
   // Routers
   app.use("/api/hk", hkRouter);
@@ -32,6 +36,10 @@ export function createApp() {
   app.use("/api", newsRouter);
   app.use("/api", ticketsRouter);
   app.use("/api", staffRouter);
+
+  app.get("/api/user", (_req, res) => {
+    res.redirect(307, "/api/auth/me");
+  });
 
   // Global error handler
   app.use(errorHandler);

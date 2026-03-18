@@ -16,6 +16,7 @@ import Tickets from "./pages/Tickets";
 import ProtectedLayout from "./ProtectedLayout";
 import RegisterPoints from "./pages/RegisterPoints";
 import RequireGuest from "./auth/RequireGuest";
+import Install from "./pages/Install";
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
       <Route path="/staff" element={<Staff />} />
       <Route path="/leaderboards" element={<Leaderboards />} />
       <Route path="/news/:id" element={<NewsStory />} />
+      <Route path="/install" element={<Install />} />
 
       {/* Protected Routes Wrapper */}
       <Route
