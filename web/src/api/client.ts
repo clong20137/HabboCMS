@@ -1,4 +1,4 @@
-const API_BASE = "/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 const DEFAULT_TIMEOUT_MS = 15_000;
 
 let csrfToken: string | null = null;
@@ -59,7 +59,10 @@ async function fetchWithTimeout(
   const t = window.setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
   try {
-const signal = mergeAbortSignals(init.signal ?? undefined, controller.signal);
+    const signal = mergeAbortSignals(
+      init.signal ?? undefined,
+      controller.signal,
+    );
     return await fetch(input, { ...init, signal });
   } finally {
     window.clearTimeout(t);
@@ -274,8 +277,6 @@ export type LeaderboardStat =
   | "gathering"
   | "knowledge";
 
-
-
 export type LeaderboardItem = {
   id: number;
   username: string;
@@ -320,87 +321,85 @@ NEWS
 ========================= */
 
 export type NewsItem = {
-id: number;
-title: string;
-description: string;
-author: string;
-image: string;
-imageUrl: string;
-createdAt: string;
+  id: number;
+  title: string;
+  description: string;
+  author: string;
+  image: string;
+  imageUrl: string;
+  createdAt: string;
 };
 
 export type NewsDetail = NewsItem & {
-story: string;
+  story: string;
 };
 
 export type NewsStory = NewsDetail;
 
 export type NewsComment = {
-id: number;
-newsId: number;
-userId: number;
-username: string;
-body: string;
-createdAt: string;
-reactions: Record<string, number>;
-myReactions: string[];
+  id: number;
+  newsId: number;
+  userId: number;
+  username: string;
+  body: string;
+  createdAt: string;
+  reactions: Record<string, number>;
+  myReactions: string[];
 };
 
 export type NewsCommentsResponse = {
-items: NewsComment[];
-pagination: {
-page: number;
-limit: number;
-total: number;
-totalPages: number;
+  items: NewsComment[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 };
-};
 
-export async function getNewsComments(
-newsId: number,
-page = 1,
-limit = 10,
-) {
-const safePage = Number.isFinite(page) ? Math.max(1, page) : 1;
-const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 50) : 10;
+export async function getNewsComments(newsId: number, page = 1, limit = 10) {
+  const safePage = Number.isFinite(page) ? Math.max(1, page) : 1;
+  const safeLimit = Number.isFinite(limit)
+    ? Math.min(Math.max(limit, 1), 50)
+    : 10;
 
-const data = await request<{
-ok: true;
-items: NewsComment[];
-pagination: {
-page: number;
-limit: number;
-total: number;
-totalPages: number;
-};
-}>(
-`/news/${encodeURIComponent(newsId)}/comments?page=${encodeURIComponent(
-safePage,
-)}&limit=${encodeURIComponent(safeLimit)}`,
-{ method: "GET" },
-);
+  const data = await request<{
+    ok: true;
+    items: NewsComment[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>(
+    `/news/${encodeURIComponent(newsId)}/comments?page=${encodeURIComponent(
+      safePage,
+    )}&limit=${encodeURIComponent(safeLimit)}`,
+    { method: "GET" },
+  );
 
-if (!data?.ok) throw new Error("Failed to load comments");
+  if (!data?.ok) throw new Error("Failed to load comments");
 
-return {
-items: Array.isArray(data.items) ? data.items : [],
-pagination: {
-page: Number(data.pagination?.page ?? safePage),
-limit: Number(data.pagination?.limit ?? safeLimit),
-total: Number(data.pagination?.total ?? 0),
-totalPages: Number(data.pagination?.totalPages ?? 1),
-},
-} as NewsCommentsResponse;
+  return {
+    items: Array.isArray(data.items) ? data.items : [],
+    pagination: {
+      page: Number(data.pagination?.page ?? safePage),
+      limit: Number(data.pagination?.limit ?? safeLimit),
+      total: Number(data.pagination?.total ?? 0),
+      totalPages: Number(data.pagination?.totalPages ?? 1),
+    },
+  } as NewsCommentsResponse;
 }
 
 export async function postNewsComment(newsId: number, body: string) {
-const data = await postJson<{ ok: true; item: NewsComment }>(
-`/news/${encodeURIComponent(newsId)}/comments`,
-{ body },
-);
+  const data = await postJson<{ ok: true; item: NewsComment }>(
+    `/news/${encodeURIComponent(newsId)}/comments`,
+    { body },
+  );
 
-if (!data?.ok) throw new Error("Failed to post comment");
-return data.item;
+  if (!data?.ok) throw new Error("Failed to post comment");
+  return data.item;
 }
 
 export async function toggleCommentReaction(
@@ -418,41 +417,44 @@ export async function toggleCommentReaction(
 }
 
 export async function getNews(limit = 3) {
-const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 20) : 3;
+  const safeLimit = Number.isFinite(limit)
+    ? Math.min(Math.max(limit, 1), 20)
+    : 3;
 
-const data = await request<{ ok: true; items: NewsItem[] }>(
-`/news?limit=${encodeURIComponent(safeLimit)}`,
-{ method: "GET" },
-);
+  const data = await request<{ ok: true; items: NewsItem[] }>(
+    `/news?limit=${encodeURIComponent(safeLimit)}`,
+    { method: "GET" },
+  );
 
-if (!data?.ok) throw new Error("Failed to load news");
-return data.items;
+  if (!data?.ok) throw new Error("Failed to load news");
+  return data.items;
 }
 
 export async function getNewsById(id: number) {
-const data = await request<{ ok: true; item: NewsDetail }>(
-`/news/${encodeURIComponent(id)}`,
-{ method: "GET" },
-);
+  const data = await request<{ ok: true; item: NewsDetail }>(
+    `/news/${encodeURIComponent(id)}`,
+    { method: "GET" },
+  );
 
-if (!data?.ok) throw new Error("Failed to load news");
-return data.item;
+  if (!data?.ok) throw new Error("Failed to load news");
+  return data.item;
 }
 
 export async function getRecentNews(currentId: number, limit = 6) {
-const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 12) : 6;
+  const safeLimit = Number.isFinite(limit)
+    ? Math.min(Math.max(limit, 1), 12)
+    : 6;
 
-const data = await request<{ ok: true; items: NewsItem[] }>(
-`/news/${encodeURIComponent(currentId)}/recent?limit=${encodeURIComponent(
-safeLimit,
-)}`,
-{ method: "GET" },
-);
+  const data = await request<{ ok: true; items: NewsItem[] }>(
+    `/news/${encodeURIComponent(currentId)}/recent?limit=${encodeURIComponent(
+      safeLimit,
+    )}`,
+    { method: "GET" },
+  );
 
-if (!data?.ok) throw new Error("Failed to load recent news");
-return data.items;
+  if (!data?.ok) throw new Error("Failed to load recent news");
+  return data.items;
 }
-
 
 /* =========================
 TICKETS

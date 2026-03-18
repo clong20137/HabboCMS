@@ -1,0 +1,75 @@
+# Dependencies
+node_modules/
+
+# Env files (NEVER commit secrets)
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editors
+.vscode/
+.idea/
+*.swp
+
+# =========================
+# API (Node backend)
+# =========================
+
+api/node_modules/
+api/dist/
+api/.env
+api/.env.*
+
+# =========================
+# WEB (Vite frontend)
+# =========================
+
+web/node_modules/
+web/dist/
+web/.env
+web/.env.*
+
+# =========================
+# PUBLIC (IIS served files)
+# =========================
+
+# Ignore large/local-only folders (you still keep them locally)
+public/nitro/
+public/nitro-assets/
+public/phpmyadmin/
+public/swf/
+
+# Optional: ignore everything except required files
+# (ONLY use this if you want a super clean repo)
+# public/*
+# !public/index.html
+# !public/assets/
+# !public/web.config
+
+# =========================
+# BUILD / TEMP FILES
+# =========================
+
+dist/
+build/
+.tmp/
+.cache/
+
+# =========================
+# MISC
+# =========================
+
+coverage/
+*.tgz
+*.zip
