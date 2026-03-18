@@ -16,6 +16,9 @@ dist-ssr
 .env
 .env.*
 !.env.example
+web/public/assets/
+web/public/nitro-assets/
+web/public/swf/
 
 # Editor directories and files
 .vscode/*
