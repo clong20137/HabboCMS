@@ -1,10 +1,18 @@
 # Dependencies
 node_modules/
+api/node_modules/
+web/node_modules/
 
-# Env files (NEVER commit secrets)
+# Env files
 .env
 .env.*
 !.env.example
+api/.env
+api/.env.*
+web/.env
+web/.env.*
+!web/.env.example
+!api/.env.example
 
 # Logs
 logs/
@@ -22,53 +30,13 @@ Thumbs.db
 .idea/
 *.swp
 
-# =========================
-# API (Node backend)
-# =========================
-
-api/node_modules/
-
-api/.env
-api/.env.*
-
-# =========================
-# WEB (Vite frontend)
-# =========================
-
-web/node_modules/
-web/.env
-web/.env.*
-web/public
-
-# =========================
-# PUBLIC (IIS served files)
-# =========================
-
-# Ignore large/local-only folders (you still keep them locally)
-public/nitro/
-public/nitro-assets/
-public/phpmyadmin/
-public/swf/
-
-
-# Optional: ignore everything except required files
-# (ONLY use this if you want a super clean repo)
-# public/*
-# !public/index.html
-# !public/assets/
-# !public/web.config
-
-# =========================
-# BUILD / TEMP FILES
-# =========================
-
+# Build / temp
 .tmp/
 .cache/
-
-# =========================
-# MISC
-# =========================
-
 coverage/
 *.tgz
 *.zip
+
+# Public / deployed / local-only folders
+public/
+web/public/
