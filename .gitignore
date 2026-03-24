@@ -36,7 +36,6 @@ api/.env.*
 # =========================
 
 web/node_modules/
-
 web/.env
 web/.env.*
 web/public
@@ -50,6 +49,7 @@ public/nitro/
 public/nitro-assets/
 public/phpmyadmin/
 public/swf/
+
 
 # Optional: ignore everything except required files
 # (ONLY use this if you want a super clean repo)
