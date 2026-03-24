@@ -5,7 +5,7 @@ import { ensureSetupTokenLogged } from "./install/state";
 
 const app = createApp();
 
-const port = Number(process.env.PORT || 3001);
+const port = Number(process.env.PORT || 3002);
 app.listen(port, async () => {
   console.log(`PlusCMS API running on http://localhost:${port}`);
   await ensureSetupTokenLogged();
