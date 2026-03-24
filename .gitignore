@@ -39,6 +39,7 @@ web/node_modules/
 
 web/.env
 web/.env.*
+web/public
 
 # =========================
 # PUBLIC (IIS served files)
