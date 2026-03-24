@@ -27,7 +27,7 @@ Thumbs.db
 # =========================
 
 api/node_modules/
-api/dist/
+
 api/.env
 api/.env.*
 
@@ -36,7 +36,7 @@ api/.env.*
 # =========================
 
 web/node_modules/
-web/dist/
+
 web/.env
 web/.env.*
 
