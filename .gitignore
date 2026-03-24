@@ -62,8 +62,6 @@ public/swf/
 # BUILD / TEMP FILES
 # =========================
 
-dist/
-build/
 .tmp/
 .cache/
 
