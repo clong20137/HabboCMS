@@ -349,11 +349,12 @@ export async function runInstall(input: InstallInput) {
 
     await backupAndWriteEnv(apiDir, {
       PORT: '3001',
-      NODE_ENV: 'development',
+      NODE_ENV: 'production',
       JWT_SECRET: jwtSecret,
       AUTH_COOKIE_NAME: 'pluscms_token',
+      SITE_URL: siteUrl,
       CORS_ORIGIN: siteUrl,
-      USE_HOST_COOKIE_PREFIX: 'false',
+      USE_HOST_COOKIE_PREFIX: siteUrl.startsWith('https://') ? 'true' : 'false',
       TRUST_PROXY: '1',
       DB_HOST: dbHost,
       DB_PORT: String(dbPort),
@@ -364,6 +365,7 @@ export async function runInstall(input: InstallInput) {
       NITRO_URL: `${nitroUrl.replace(/\/$/, '')}/`,
       TWOFA_ENC_KEY: twofaKey,
       TURNSTILE_SECRET: '',
+      INSTALLER_ENABLED: 'false',
     });
 
     return { ok: true, adminUserId };

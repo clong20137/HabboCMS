@@ -1,8 +1,16 @@
 import express from 'express';
 import { readSetupToken, isInstalled, markInstalled, getInstallTokenHint } from '../install/state';
+import { INSTALLER_ENABLED } from '../env';
 import { preflightInstall, runInstall } from '../install/service';
 
 export const installRouter = express.Router();
+
+installRouter.use(async (_req, res, next) => {
+  if (!INSTALLER_ENABLED) {
+    return res.status(404).json({ ok: false, error: 'Installer is disabled.' });
+  }
+  return next();
+});
 
 function isLoopback(ip: string) {
   const value = String(ip || '').toLowerCase();

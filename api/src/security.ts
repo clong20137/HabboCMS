@@ -5,11 +5,39 @@ import helmet from "helmet";
 import hpp from "hpp";
 import crypto from "crypto";
 
-import { CORS_ORIGINS, IS_PROD, TRUST_PROXY } from "./env";
+import { CORS_ORIGINS, IS_PROD, SITE_URL, TRUST_PROXY } from "./env";
 import { requestIdMiddleware } from "./middleware/requestId";
 import { httpLogger } from "./middleware/logger";
 
 const CSRF_COOKIE = "pluscsrf";
+
+function normalizeOrigin(value: string) {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return "";
+  }
+}
+
+function requireTrustedOrigin(req: Request, res: Response, next: NextFunction) {
+  const method = req.method.toUpperCase();
+  const isMutation = method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
+  if (!isMutation) return next();
+  if (req.path.startsWith("/api/install")) return next();
+
+  const allowedOrigins = new Set(
+    [SITE_URL, ...CORS_ORIGINS].map(normalizeOrigin).filter(Boolean),
+  );
+
+  if (!allowedOrigins.size) return next();
+
+  const requestOrigin = normalizeOrigin(String(req.headers.origin || req.headers.referer || ""));
+  if (!requestOrigin || !allowedOrigins.has(requestOrigin)) {
+    return res.status(403).json({ ok: false, error: "Origin blocked" });
+  }
+
+  return next();
+}
 
 /**
  * Double-submit CSRF:
@@ -143,5 +171,6 @@ export function applySecurity(app: Express) {
     }) as any,
   );
 
+  app.use(requireTrustedOrigin);
   app.use(requireCsrf);
 }

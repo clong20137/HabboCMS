@@ -11,6 +11,7 @@ import { requireAuth } from "../auth";
 import { requireHousekeepingAccess, requireHKPermission } from "./middleware";
 import { hkAudit } from "./audit";
 import { hasPermission } from "./permissions";
+import { sanitizeRichHtml } from "../utils/html";
 
 export const hkRouter = Router();
 
@@ -884,6 +885,8 @@ hkRouter.post(
         return res.status(400).json({ error: "Story is required." });
       }
 
+      storyHtml = sanitizeRichHtml(storyHtml);
+
       const [result] = await pool.query<ResultSetHeader>(
         `
 INSERT INTO news (title, description, story, story_html, image_url, author)
@@ -965,6 +968,8 @@ hkRouter.put(
       if (!story && !storyHtml) {
         return res.status(400).json({ error: "Story is required." });
       }
+
+      storyHtml = sanitizeRichHtml(storyHtml);
 
       const [result] = await pool.query<ResultSetHeader>(
         `

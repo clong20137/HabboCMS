@@ -29,11 +29,15 @@ export function setAuthCookie(res: Response, token: string) {
     secure: IS_PROD,
     path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000,
+    priority: "high",
   });
 }
 
 export function clearAuthCookie(res: Response) {
-  res.clearCookie(COOKIE_NAME, { path: "/" });
+  const names = new Set([COOKIE_NAME, AUTH_COOKIE_NAME, `__Host-${AUTH_COOKIE_NAME}`]);
+  for (const name of names) {
+    res.clearCookie(name, { path: "/" });
+  }
 }
 
 /**

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import SiteLayout from "../components/layout/SiteLayout";
-import "../styles/tickets.scss";
+import "../styles/Tickets.scss";
 
 import duckImg from "../assets/support/duck.png";
 import infoImg from "../assets/support/info.png";

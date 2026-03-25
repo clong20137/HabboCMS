@@ -60,7 +60,9 @@ export const DB_PASS = optional("DB_PASS", "");
 export const DB_NAME = optional("DB_NAME", "plus");
 export const DB_CONNECTION_LIMIT = Math.max(1, optionalNumber("DB_CONNECTION_LIMIT", 10));
 
+export const SITE_URL = optional("SITE_URL", "").replace(/\/$/, "");
 export const NITRO_URL = optional("NITRO_URL", "http://localhost:3000");
+export const INSTALLER_ENABLED = optional("INSTALLER_ENABLED", IS_PROD ? "false" : "true").toLowerCase() === "true";
 export const TWOFA_ENC_KEY = optional("TWOFA_ENC_KEY", "");
 export const TURNSTILE_SECRET = optional("TURNSTILE_SECRET", "");
 export const TURNSTILE_ENABLED = TURNSTILE_SECRET.length > 0;
