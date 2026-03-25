@@ -1,0 +1,39 @@
+.notfound-wrapper {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notfound-card {
+    background: #1e293b;
+    padding: 50px 60px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    max-width: 500px;
+    width: 100%;
+}
+
+.notfound-code {
+    font-size: 5rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: #38bdf8;
+}
+
+.notfound-title {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.notfound-desc {
+    color: #94a3b8;
+    margin-bottom: 30px;
+}
+
+.notfound-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}

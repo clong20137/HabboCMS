@@ -1,0 +1,501 @@
+/* =========================================
+Tickets (CMS themed + tidy)
+- Uses your CMS button/theme vars
+- Fixes status overlap in thread header
+- Forces textarea font to match
+- Ensures create inputs/buttons are full-width
+========================================= */
+
+.tickets-page {
+    padding: 0;
+}
+
+
+/* -------------------------
+Layout
+------------------------- */
+
+.tickets-grid {
+    display: grid;
+    grid-template-columns: 1.55fr 0.95fr;
+    gap: 18px;
+    align-items: start;
+}
+
+@media (max-width: 980px) {
+    .tickets-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.tickets-panel {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+
+/* Make the Tickets panel header match CMS and vertically center the title */
+
+.panel-head--gold {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 10px 14px;
+    background: linear-gradient(180deg, var(--secondary-color) 50%, var(--secondary-dark, var(--secondary-color)) 50%);
+    color: var(--on-secondary);
+    font-weight: 900;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tickets-body {
+    padding: 18px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+
+/* -------------------------
+Buttons (map legacy classes to CMS theme)
+------------------------- */
+
+.btn.btn-gold {
+    color: var(--on-primary);
+    border-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(180deg, var(--primary-color) 50%, var(--primary-dark) 50%);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.btn.btn-dark {
+    color: var(--on-secondary);
+    border-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(180deg, var(--secondary-color) 50%, var(--secondary-dark, var(--secondary-color)) 50%);
+}
+
+
+/* Full-width buttons in create/reply areas */
+
+.tickets-submit,
+.tickets-back {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.tickets-submit {
+    margin-top: 14px;
+    padding: 12px 14px;
+}
+
+.tickets-back {
+    margin-top: 10px;
+    padding: 10px 14px;
+}
+
+.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+
+/* -------------------------
+Inputs / select / textarea
+(Force font consistency + full width)
+------------------------- */
+
+.tickets-label {
+    display: block;
+    font-weight: 900;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+.tickets-selectWrap {
+    position: relative;
+    width: 100%;
+}
+
+.tickets-input {
+    width: 100%;
+    display: block;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.2);
+    color: rgba(255, 255, 255, 0.92);
+    padding: 12px 12px;
+    line-height: 1.2;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+.tickets-input::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 700;
+}
+
+.tickets-textarea {
+    min-height: 160px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+.tickets-select {
+    width: 100%;
+    display: block;
+    height: 44px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 38px;
+}
+
+.tickets-selectCaret {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+.tickets-count {
+    margin-top: 8px;
+    opacity: 0.65;
+    font-weight: 800;
+}
+
+
+/* -------------------------
+Empty state
+------------------------- */
+
+.tickets-empty {
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.tickets-empty__icon {
+    opacity: 0.65;
+    filter: grayscale(0.25);
+}
+
+.tickets-empty__title {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+}
+
+.tickets-empty__sub {
+    opacity: 0.7;
+    font-weight: 700;
+}
+
+.tickets-cta {
+    margin-top: 10px;
+    min-width: 220px;
+    justify-content: center;
+}
+
+
+/* -------------------------
+Right-side types list + duck
+------------------------- */
+
+.ticket-types,
+.ticket-guidelines {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 12px;
+    font-weight: 700;
+    opacity: 0.82;
+}
+
+.tickets-body--types {
+    position: relative;
+    padding-right: 120px;
+}
+
+.support-duck {
+    position: absolute;
+    right: 18px;
+    top: 18px;
+    width: 78px;
+    height: auto;
+    opacity: 0.95;
+    pointer-events: none;
+}
+
+
+/* -------------------------
+Warning + errors
+------------------------- */
+
+.tickets-warning {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.88);
+    font-weight: 800;
+}
+
+.tickets-warning__icon {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    overflow: hidden;
+}
+
+.tickets-warning__icon img {
+    width: 14px;
+    height: 14px;
+    filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
+}
+
+.tickets-error {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 0, 0, 0.1);
+    border: 1px solid rgba(255, 0, 0, 0.25);
+    color: rgba(255, 255, 255, 0.92);
+    font-weight: 800;
+}
+
+
+/* -------------------------
+Ticket list
+------------------------- */
+
+.tickets-list__top {
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.tickets-table {
+    display: grid;
+    gap: 10px;
+}
+
+.ticket-row {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 12px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.14s ease, filter 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+}
+
+.ticket-row:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.03);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.ticket-row.is-active {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.ticket-type {
+    font-weight: 900;
+    color: #FFF;
+}
+
+.ticket-meta {
+    margin-top: 3px;
+    font-size: 12px;
+    color: #FFF;
+}
+
+
+/* Status pill */
+
+.ticket-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #FFF;
+    white-space: nowrap;
+}
+
+.ticket-status--open {
+    border-color: rgba(59, 130, 246, 0.35);
+    background: rgba(59, 130, 246, 0.16);
+}
+
+.ticket-status--pending {
+    border-color: rgba(245, 158, 11, 0.35);
+    background: rgba(245, 158, 11, 0.16);
+}
+
+.ticket-status--closed {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+
+/* -------------------------
+Conversation / thread (fix overlap)
+------------------------- */
+
+.ticket-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+
+
+.ticket-thread__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ticket-thread__metaLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 220px;
+}
+
+.ticket-thread__type {
+    font-weight: 900;
+    font-size: 16px;
+}
+
+.ticket-thread__status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-weight: 800;
+}
+
+.ticket-thread__box {
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    max-height: 360px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+
+/* Message bubbles */
+
+.ticket-bubble {
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.18);
+    padding: 10px 12px;
+}
+
+.ticket-bubble--user {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.ticket-bubble--staff {
+    border-color: rgba(59, 130, 246, 0.22);
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.ticket-bubble__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+
+.ticket-bubble__name {
+    font-weight: 900;
+}
+
+.ticket-bubble__time {
+    font-weight: 800;
+    opacity: 0.65;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.ticket-bubble__msg {
+    font-weight: 700;
+    opacity: 0.92;
+    line-height: 1.35;
+    white-space: pre-wrap;
+}
+
+
+/* Reply box */
+
+.ticket-thread__reply {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ticket-thread__textarea {
+    min-height: 140px;
+}
+
+.ticket-thread__replyRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+
+/* -------------------------
+View transition (optional, kept)
+------------------------- */
+
+.tickets-switch {
+    transition: opacity var(--tickets-ms, 260ms) ease, transform var(--tickets-ms, 260ms) ease;
+    will-change: opacity, transform;
+}
+
+.tickets-switch.is-switching {
+    opacity: 0;
+    transform: translateY(8px);
+}

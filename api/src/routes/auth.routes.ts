@@ -28,6 +28,7 @@ import { verifyTotp } from "../services/twofa.service"; // verifyTotp(secretEnc,
 
 // ✅ NEW: login history
 import * as loginHistory from "../services/loginHistory.service";
+import { verifyTurnstileToken } from "../services/turnstile.service";
 
 export const authRouter = express.Router();
 
@@ -56,6 +57,16 @@ authRouter.post(
   validateBody(bRegister),
   asyncHandler(async (req, res) => {
     const body = req.body as any;
+
+    const captcha = await verifyTurnstileToken(body.captchaToken, req.ip);
+    if (!captcha.success) {
+      return res.status(400).json({
+        ok: false,
+        error: "Captcha verification failed.",
+        details: captcha.errors,
+      });
+    }
+
     const result = await authService.register(pool, { ...(body as any), ip: req.ip });
 
     // ✅ NEW: force first-time stat setup (5 points) using "points"
@@ -84,7 +95,18 @@ authRouter.post(
   loginLimiter,
   validateBody(bLogin),
   asyncHandler(async (req, res) => {
-    const user = await authService.login(pool, req.body as any);
+    const body = req.body as any;
+
+    const captcha = await verifyTurnstileToken(body.captchaToken, req.ip);
+    if (!captcha.success) {
+      return res.status(400).json({
+        ok: false,
+        error: "Captcha verification failed.",
+        details: captcha.errors,
+      });
+    }
+
+    const user = await authService.login(pool, body);
 
     // ✅ Ban check BEFORE any 2FA challenge or cookie
     const ban = await getBanStatus({

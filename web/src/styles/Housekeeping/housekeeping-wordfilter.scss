@@ -1,0 +1,303 @@
+.hk-wordfilter {
+    .hk-wordfilter__searchRow {
+        padding-top: 12px;
+        padding-bottom: 0;
+    }
+    .hk-wordfilter__addGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    }
+    .hk-wordfilter__checks {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .hk-wordfilter__addActions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: end;
+    }
+    .hk-wordfilter__tableWrap {
+        margin-top: 16px;
+        color: #FFF;
+    }
+    .hk-wordfilter__tableTop {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #FFF;
+        margin: 10px 0 12px;
+        gap: 10px;
+        @media (max-width: 720px) {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+    .hk-wordfilter__pager {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .hk-tableScroll {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 6px;
+    }
+    .hk-table {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.12);
+        min-width: 980px;
+    }
+    .hk-table__row {
+        display: grid;
+        grid-template-columns: 160px 1fr 140px 70px 90px 110px;
+        gap: 10px;
+        padding: 12px 12px;
+        align-items: center;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+            gap: 6px;
+            align-items: start;
+        }
+    }
+    .hk-table__row--head {
+        border-top: none;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: rgba(0, 0, 0, 0.25);
+        @media (max-width: 900px) {
+            display: none;
+        }
+    }
+    .hk-table__actionsHead {
+        text-align: right;
+    }
+    .hk-table__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        align-items: center;
+        white-space: nowrap;
+        @media (max-width: 900px) {
+            justify-content: flex-start;
+        }
+    }
+    .hk-iconBtn {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(0, 0, 0, 0.22);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        img {
+            width: 18px;
+            height: 18px;
+            image-rendering: pixelated;
+        }
+        &:hover {
+            background: rgba(0, 0, 0, 0.32);
+        }
+        &:active {
+            transform: translateY(1px);
+        }
+    }
+    .hk-table__empty {
+        padding: 14px;
+        text-align: center;
+        font-weight: 800;
+        color: #fff;
+    }
+    .hk-imgcheck {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        user-select: none;
+        font-weight: 900;
+        color: #fff;
+        input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .hk-imgcheck__box {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            background: rgba(0, 0, 0, 0.25);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+        }
+        /* hidden until checked */
+        .hk-imgcheck__tick {
+            width: 14px;
+            height: 14px;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.12s ease, transform 0.12s ease;
+            image-rendering: pixelated;
+        }
+        input:checked+.hk-imgcheck__box .hk-imgcheck__tick {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    .hk-modalOverlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        background: rgba(0, 0, 0, 0.35);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s ease;
+    }
+    .hk-modalOverlay.hk-show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .hk-modalWindow {
+        width: min(720px, 92vw);
+        border-radius: 10px;
+        overflow: hidden;
+        transform: scale(0.96);
+        opacity: 0;
+        transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+    .hk-modalWindow.hk-show {
+        transform: scale(1);
+        opacity: 1;
+    }
+    .hk-modalHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .hk-modalClose {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        background: #a83b3b;
+        color: #fff;
+        font-size: 22px;
+        line-height: 20px;
+        cursor: pointer;
+    }
+    .hk-wordfilter__editGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    }
+    .hk-wordfilter__editActions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    /* helpers */
+    .hk-label {
+        display: block;
+        font-weight: 800;
+        margin-bottom: 6px;
+        color: #fff;
+    }
+    .hk-input {
+        width: 100%;
+    }
+    .hk-muted {
+        opacity: 0.8;
+        font-weight: 700;
+    }
+    .hk-mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-weight: 800;
+    }
+    .hk-alert {
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-weight: 800;
+        margin-bottom: 12px;
+    }
+    .hk-alert--error {
+        background: rgba(255, 0, 0, 0.12);
+        border: 1px solid rgba(255, 0, 0, 0.25);
+        color: #fff;
+    }
+}
+
+.hk-wordfilter__searchRow {
+    margin-bottom: 10px;
+}
+
+.hk-wordfilter__search {
+    width: 100%;
+}
+
+
+/* Icon action buttons */
+
+.hk-actions-icons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.hk-icon-btn {
+    width: 34px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+}
+
+.hk-icon-btn img {
+    width: 28px;
+    height: 28px;
+    image-rendering: pixelated;
+}
+
+
+/* Fixed modal (prevents clipping) */
+
+.hk-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+}
+
+.hk-modal {
+    width: min(720px, 96vw);
+    max-height: 90vh;
+    overflow: auto;
+    z-index: 100000;
+}

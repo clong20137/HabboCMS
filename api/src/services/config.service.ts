@@ -1,5 +1,6 @@
 import type { Pool } from "mysql2/promise";
 
+import { NITRO_URL, TURNSTILE_ENABLED } from "../env";
 import { getCmsSetting } from "../utils/cmsSettings";
 
 export async function getSiteConfig(pool: Pool) {
@@ -9,6 +10,7 @@ export async function getSiteConfig(pool: Pool) {
 
 export function getClientConfig() {
   return {
-    nitroUrl: process.env.NITRO_URL || "http://localhost:3000",
+    nitroUrl: NITRO_URL,
+    turnstileEnabled: TURNSTILE_ENABLED,
   };
 }

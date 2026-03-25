@@ -1,12 +1,10 @@
-import "dotenv/config";
-
 import { createApp } from "./app";
+import { PORT } from "./env";
 import { ensureSetupTokenLogged } from "./install/state";
 
 const app = createApp();
 
-const port = Number(process.env.PORT || 3002);
-app.listen(port, async () => {
-  console.log(`PlusCMS API running on http://localhost:${port}`);
+app.listen(PORT, async () => {
+  console.log(`PlusCMS API running on http://localhost:${PORT}`);
   await ensureSetupTokenLogged();
 });
