@@ -40,3 +40,9 @@ coverage/
 # Large local/deployment-only folders you do not want in git
 public/
 web/public/
+node_modules/
+api/node_modules/
+web/node_modules/
+
+public/
+web/public/
