@@ -11,8 +11,8 @@ api/.env
 api/.env.*
 web/.env
 web/.env.*
-!web/.env.example
 !api/.env.example
+!web/.env.example
 
 # Logs
 logs/
@@ -30,13 +30,13 @@ Thumbs.db
 .idea/
 *.swp
 
-# Build / temp
+# Temp / cache
 .tmp/
 .cache/
 coverage/
 *.tgz
 *.zip
 
-# Public / deployed / local-only folders
+# Large local/deployment-only folders you do not want in git
 public/
 web/public/
