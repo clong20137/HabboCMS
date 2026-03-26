@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SiteLayout from "../components/layout/SiteLayout";
 import { api } from "../api/client";
 import { getAvatarUrl } from "../utils/avatar";
@@ -122,10 +122,6 @@ export default function Staff() {
     setOpenRanks((prev) => ({ ...prev, [rank]: !prev[rank] }));
   }
 
-  const totalStaff = useMemo(
-    () => groups.reduce((sum, g) => sum + g.members.length, 0),
-    [groups],
-  );
 
   return (
     <SiteLayout active="community">
