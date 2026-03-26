@@ -27,7 +27,7 @@ function loadDock(): DockState {
 
     return {
       fullscreen: Boolean(parsed.fullscreen),
-      open: parsed.open === undefined ? false : Boolean(parsed.open),
+      open: false,
     };
   } catch {
     return { fullscreen: false, open: false };
@@ -75,6 +75,15 @@ export default function ClientDockProvider({
   useEffect(() => {
     saveDock(dock);
   }, [dock]);
+
+  useEffect(() => {
+    if (loading || user) return;
+
+    launchedRef.current = false;
+    setErr(null);
+    setTicket("");
+    setDock({ open: false, fullscreen: false });
+  }, [loading, user]);
 
   useEffect(() => {
     let alive = true;

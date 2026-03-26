@@ -309,6 +309,7 @@ authRouter.get(
         username: String(user.username),
         mail: (user as any).mail,
         rank: Number((user as any).rank ?? 0),
+        figure: (user as any).look ?? null,
 
         credits: Number((user as any).credits ?? 0),
         bank_amount: Number((user as any).bank_credits ?? 0),

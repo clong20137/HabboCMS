@@ -25,6 +25,7 @@ export type User = {
   username: string;
   mail?: string | null;
   rank?: number;
+  figure?: string | null;
 
   health?: number;
   maxHealth?: number;
@@ -81,6 +82,7 @@ function normalizeUser(u: any): User {
     username: String(u?.username ?? ""),
     mail: u?.mail ?? null,
     rank: u?.rank != null ? Number(u.rank) : 0,
+    figure: u?.figure ?? u?.look ?? null,
 
     health: Number(u?.health ?? u?.current_health ?? 0),
     maxHealth: Number(u?.maxHealth ?? u?.max_health ?? 0),

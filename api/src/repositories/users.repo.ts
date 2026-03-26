@@ -316,7 +316,7 @@ const safeLimit = Number.isFinite(limit)
 
 if (USER_LEADERBOARD_FIELDS.has(field)) {
 const sql = `
-SELECT id, username, ${field} AS value
+SELECT id, username, look, ${field} AS value
 FROM users
 WHERE ${field} IS NOT NULL
 AND COALESCE(\`rank\`, 1) < 4
@@ -334,7 +334,7 @@ return [];
 
 if (USER_STATS_LEADERBOARD_FIELDS.has(field)) {
 const sql = `
-SELECT u.id, u.username, us.${field} AS value
+SELECT u.id, u.username, u.look, us.${field} AS value
 FROM user_stats us
 INNER JOIN users u ON u.id = us.user_id
 WHERE us.${field} IS NOT NULL

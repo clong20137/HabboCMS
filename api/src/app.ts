@@ -13,6 +13,7 @@ import { newsRouter } from "./routes/news.routes";
 import { ticketsRouter } from "./routes/tickets.routes";
 import { staffRouter } from "./routes/staff.routes";
 import { installRouter } from "./routes/install.routes";
+import { liveFeedRouter } from "./routes/liveFeed.routes";
 
 export function createApp() {
   const app = express();
@@ -36,6 +37,7 @@ export function createApp() {
   app.use("/api", newsRouter);
   app.use("/api", ticketsRouter);
   app.use("/api", staffRouter);
+  app.use("/api", liveFeedRouter);
 
   app.get("/api/user", (_req, res) => {
     res.redirect(307, "/api/auth/me");

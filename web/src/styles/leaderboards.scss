@@ -315,3 +315,19 @@
     background: #f3be3f;
     box-shadow: 0 0 0 3px rgba(243, 190, 63, 0.18);
 }
+
+.lb-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.lb-avatar__img {
+    display: block;
+    height: 160px; // 👈 intentionally bigger than container
+    padding: 28px 0px 0px 0px;
+}

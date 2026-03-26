@@ -237,3 +237,19 @@ COLLAPSE (SMOOTH)
     line-height: 1.5;
     color: #FFF;
 }
+
+.staff-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.staff-avatar__img {
+    height: 160px; // 👈 intentionally bigger than container
+    padding: 28px 0px 0px 0px;
+}

@@ -568,8 +568,8 @@ ME PAGE PANELS
 }
 
 .bar {
-    height: 12px;
-    border-radius: 999px;
+    height: 28px;
+    border-radius: 8px;
     background: rgba(0, 0, 0, .45);
     border: 1px solid rgba(255, 255, 255, .08);
     overflow: hidden;
@@ -577,15 +577,15 @@ ME PAGE PANELS
 
 .bar-fill {
     height: 100%;
-    border-radius: 999px;
+    border-radius: 8px;
 }
 
 .bar-fill--health {
-    background: linear-gradient(180deg, #e05a5a 50%, #b83b3b 50%);
+    background: var(--primary-color);
 }
 
 .bar-fill--energy {
-    background: linear-gradient(180deg, #4b6cb7 50%, #2f3f99 50%);
+    background: var(--primary-color);
 }
 
 .stat-value {

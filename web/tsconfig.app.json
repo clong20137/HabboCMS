@@ -32,6 +32,23 @@
     "nitro",
     "nitro-assets",
     "swf",
-    "public/nitro-assets"
+    "public/nitro-assets",
+    "src/app.ts",
+    "src/index.ts",
+    "src/auth.ts",
+    "src/db.ts",
+    "src/env.ts",
+    "src/security.ts",
+    "src/db",
+    "src/errors",
+    "src/housekeeping",
+    "src/install",
+    "src/middleware",
+    "src/repositories",
+    "src/routes",
+    "src/services",
+    "src/types/db",
+    "src/utils",
+    "src/validation"
   ]
 }

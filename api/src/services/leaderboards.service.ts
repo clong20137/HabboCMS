@@ -36,6 +36,7 @@ export async function getLeaderboard(
   return rows.map((r: any) => ({
     id: Number(r.id),
     username: String(r.username),
+    figure: r.look ?? null,
     value: Number(r.value ?? 0),
   }));
 }

@@ -9,7 +9,6 @@ import habboLogo from "../../assets/habbo.png";
 import headerBg from "../../assets/bg.png";
 import spaceBg from "../../assets/bgspace.gif";
 
-// Nav icons
 import navHome from "../../assets/navigation/home.png";
 import navCommunity from "../../assets/navigation/community.png";
 import navStore from "../../assets/navigation/diamonds.png";
@@ -18,7 +17,6 @@ import navSetting from "../../assets/navigation/setting.png";
 import navStaff from "../../assets/navigation/staff.png";
 import navEdit from "../../assets/navigation/edit.png";
 
-// Dropdown icons
 import ticketsIcon from "../../assets/navigation/tickets.png";
 import logoutIcon from "../../assets/navigation/logout.gif";
 import InlineColorPicker from "../theme/InlineColorPicker";
@@ -30,6 +28,7 @@ import {
   readableText,
 } from "../../theme/themeUtils";
 import type { ThemeState } from "../../theme/themeUtils";
+import { useClientDock } from "../../pages/ClientDock";
 
 type Props = PropsWithChildren<{
   active?: "home" | "community" | "store" | "me" | "support";
@@ -81,6 +80,7 @@ export default function SiteLayout({ children, active = "home" }: Props) {
   const nav = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const dock = useClientDock();
 
   const [online, setOnline] = useState<number | null>(null);
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
@@ -103,6 +103,7 @@ export default function SiteLayout({ children, active = "home" }: Props) {
       if (!el) return;
       if (!el.contains(e.target as Node)) setOpenMenu(null);
     }
+
     document.addEventListener("mousedown", onDocMouseDown);
     return () => document.removeEventListener("mousedown", onDocMouseDown);
   }, []);
@@ -202,9 +203,13 @@ export default function SiteLayout({ children, active = "home" }: Props) {
             </div>
 
             {isLoggedIn ? (
-              <Link to="/client" className="btn btn-primary btn-enter">
+              <button
+                type="button"
+                className="btn btn-primary btn-enter"
+                onClick={() => dock.openDock()}
+              >
                 Enter Client
-              </Link>
+              </button>
             ) : (
               <Link to="/register" className="btn btn-primary btn-enter">
                 Register

@@ -9,5 +9,6 @@ export async function getStaff(pool: Pool, minRank: number) {
     username: String(u.username),
     motto: u.motto ?? null,
     rank: Number(u.rank ?? 0),
+    figure: u.look ?? null,
   }));
 }

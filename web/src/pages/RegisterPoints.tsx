@@ -174,7 +174,7 @@ if (!s?.ok) throw new Error("Failed to load points.");
 
 if (s.statsSetupDone || Number(s.points || 0) <= 0) {
 showToast("Points already allocated.", "info");
-nav("/client", { replace: true });
+nav("/me", { replace: true });
 return;
 }
 
@@ -227,7 +227,7 @@ setSaving(true);
 try {
 await api.applyStatsSetup(inc);
 showToast("Points applied! Welcome!", "success");
-nav("/client", { replace: true });
+nav("/me", { replace: true });
 } catch (e: any) {
 showToast(e?.message || "Failed to apply points.", "error");
 } finally {

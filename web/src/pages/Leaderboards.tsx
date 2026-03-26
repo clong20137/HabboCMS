@@ -1,12 +1,7 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import SiteLayout from "../components/layout/SiteLayout";
 import { api, type LeaderboardItem } from "../api/client";
+import { getAvatarUrl } from "../utils/avatar";
 import "../styles/leaderboards.scss";
 import { useHotelTitle } from "../hooks/useHotelTitle";
 
@@ -292,7 +287,17 @@ export default function Leaderboards() {
                           >
                             <div className="lb-left">
                               <div className="lb-rank">{idx + 1}</div>
-                              <div className="lb-avatar" aria-hidden="true" />
+                              <div className="lb-avatar">
+                                <img
+                                  className="lb-avatar__img"
+                                  src={getAvatarUrl(u.figure, {
+                                    headOnly: true,
+                                    size: "l",
+                                  })}
+                                  alt={u.username}
+                                  loading="lazy"
+                                />
+                              </div>
                               <div className="lb-meta">
                                 <div className="lb-name">{u.username}</div>
                                 <div className="lb-sub">
@@ -326,74 +331,62 @@ export default function Leaderboards() {
   return (
     <SiteLayout active="community">
       <div className="leaderboards-page">
-        <div className="lb-xfade-stage" style={{ minHeight: 420 }}>
+        <div className="lb-xfade-stage">
           <div
-            key={`page-current-${page}`}
             className="lb-xfade-layer"
             style={{
               opacity: currentOpacity,
               transition: `opacity ${CROSSFADE_MS}ms ease`,
-              pointerEvents: phase === "fading" ? "none" : "auto",
             }}
           >
             {renderBoards(currentBoards)}
           </div>
 
-          {incomingBoards && nextPage !== null && (
+          {incomingBoards && (
             <div
-              key={`page-next-${nextPage}`}
               className="lb-xfade-layer"
               style={{
                 opacity: nextOpacity,
                 transition: `opacity ${CROSSFADE_MS}ms ease`,
-                pointerEvents: "none",
               }}
             >
               {renderBoards(incomingBoards)}
             </div>
           )}
         </div>
+        <div className="leaderboards-nav">
+          <button
+            type="button"
+            className="lb-nav-btn"
+            onClick={() => goTo(page - 1)}
+            disabled={page <= 0 || phase !== "idle"}
+            aria-label="Previous page"
+          >
+            ‹
+          </button>
 
-        {pageCount > 1 && (
-          <div className="leaderboards-nav">
-            <button
-              type="button"
-              className="lb-nav-btn"
-              onClick={() => goTo(page - 1)}
-              disabled={phase !== "idle" || page <= 0}
-              aria-label="Previous leaderboard page"
-            >
-              ‹
-            </button>
-
-            <div
-              className="leaderboards-dots"
-              role="tablist"
-              aria-label="Leaderboards pages"
-            >
-              {Array.from({ length: pageCount }).map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className={`lb-dot ${i === (nextPage ?? page) ? "active" : ""}`}
-                  onClick={() => goTo(i)}
-                  aria-label={`Go to page ${i + 1}`}
-                  aria-current={i === (nextPage ?? page) ? "true" : "false"}
-                />
-              ))}
-            </div>
-
-            <button
-              type="button"
-              className="lb-nav-btn"
-              onClick={() => goTo(page + 1)}
-              disabled={phase !== "idle" || page >= pageCount - 1}
-              aria-label="Next leaderboard page"
-            >
-              ›
-            </button>
+          <div className="leaderboards-dots" aria-label="Leaderboard pages">
+            {Array.from({ length: pageCount }).map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className={`lb-dot ${idx === page ? "active" : ""}`}
+                onClick={() => goTo(idx)}
+                aria-label={`Go to page ${idx + 1}`}
+              />
+            ))}
           </div>
-        )}
+
+          <button
+            type="button"
+            className="lb-nav-btn"
+            onClick={() => goTo(page + 1)}
+            disabled={page >= pageCount - 1 || phase !== "idle"}
+            aria-label="Next page"
+          >
+            ›
+          </button>
+        </div>
       </div>
     </SiteLayout>
   );

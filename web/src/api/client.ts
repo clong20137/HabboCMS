@@ -280,6 +280,7 @@ export type LeaderboardStat =
 export type LeaderboardItem = {
   id: number;
   username: string;
+  figure?: string | null;
   value: number;
 };
 
@@ -306,6 +307,29 @@ export type CreditsLeaderboardItem = {
   username: string;
   credits: number;
 };
+
+export type LiveFeedEntry = {
+  id: number;
+  username: string | null;
+  avatar_url: string | null;
+  content: string;
+  tag: string | null;
+  created_at: string;
+};
+
+export async function getLiveFeed(limit = 20) {
+  const safeLimit = Number.isFinite(limit)
+    ? Math.min(Math.max(limit, 1), 50)
+    : 20;
+
+  const data = await request<{ ok: true; items: LiveFeedEntry[] }>(
+    `/live-feed?limit=${encodeURIComponent(safeLimit)}`,
+    { method: "GET" },
+  );
+
+  if (!data?.ok) throw new Error("Failed to load live feed.");
+  return Array.isArray(data.items) ? data.items : [];
+}
 
 export async function getCreditsLeaderboard(limit = 10) {
   const items = await getLeaderboard("credits", limit);
@@ -693,6 +717,7 @@ export const api = {
   // misc
   getSiteConfig,
   checkUsername,
+  getLiveFeed,
 
   // character points
   getStatsSetupStatus,

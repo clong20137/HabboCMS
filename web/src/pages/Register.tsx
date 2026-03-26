@@ -244,7 +244,7 @@ export default function Register() {
       if (freshPoints > 0) {
         nav("/register/points");
       } else {
-        nav("/client");
+        nav("/me", { replace: true });
       }
     } catch (e: any) {
       showToast(e?.message || "Failed to register.", "error");

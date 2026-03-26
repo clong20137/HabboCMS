@@ -63,6 +63,9 @@ export default function HKSettings(props: Props) {
   const [hotelName, setHotelName] = useState("");
   const [hotelNameLoading, setHotelNameLoading] = useState(false);
 
+  const [discordInvite, setDiscordInvite] = useState("");
+  const [discordLoading, setDiscordLoading] = useState(false);
+
   const [serverItems, setServerItems] = useState<SettingItem[]>([]);
   const [serverLoading, setServerLoading] = useState(false);
   const [serverSavingKey, setServerSavingKey] = useState<string | null>(null);
@@ -114,6 +117,10 @@ export default function HKSettings(props: Props) {
         if (hn) setHotelName(String(hn.value ?? ""));
         else if (hotelNameFromItems) setHotelName(hotelNameFromItems);
         else setHotelName("");
+
+        const discord = list.find((x) => x.key === "discord_invite");
+        if (discord) setDiscordInvite(String(discord.value ?? ""));
+        else setDiscordInvite("");
       } else {
         console.error("HK settings load failed:", generalRes.reason);
         showToast("Failed to load general settings.", "error");
@@ -243,6 +250,33 @@ export default function HKSettings(props: Props) {
     }
   }
 
+  async function saveDiscordInvite() {
+    try {
+      if (!canEditHotelName) {
+        showToast("Only Rank 7 can edit Discord Invite.", "warning");
+        return;
+      }
+
+      const v = discordInvite.trim();
+
+      if (!v) {
+        showToast("Discord Invite is required.", "warning");
+        return;
+      }
+
+      setDiscordLoading(true);
+
+      await apiPut("/api/hk/settings/discord_invite", { value: v });
+
+      await load();
+      showToast("Discord Invite saved.", "success");
+    } catch (e: any) {
+      showToast(e?.message || "Failed to save Discord Invite", "error");
+    } finally {
+      setDiscordLoading(false);
+    }
+  }
+
   async function saveServerSetting(key: string, value: string) {
     try {
       if (!canEditServerSettings) {
@@ -354,6 +388,43 @@ export default function HKSettings(props: Props) {
                 }
               >
                 {hotelNameLoading ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+
+          <div className="hk-settingRow">
+            <div className="hk-settingInfo">
+              <div className="hk-settingTitle">Discord Channel</div>
+              <div className="hk-settingDesc">
+                Saves the Discord invite/channel link used on the Me page.
+              </div>
+              {!canEditHotelName && (
+                <div className="hk-settingDesc">
+                  <b>Rank 7 only</b> can edit this setting.
+                </div>
+              )}
+            </div>
+
+            <div
+              className="hk-settingAction"
+              style={{ display: "flex", gap: 10, flexWrap: "wrap" }}
+            >
+              <input
+                className="hk-input"
+                value={discordInvite}
+                onChange={(e) => setDiscordInvite(e.target.value)}
+                placeholder="https://discord.gg/yourinvite"
+                disabled={!canEditHotelName || discordLoading}
+                style={{ width: 320 }}
+              />
+              <button
+                className="btn btn-primary"
+                onClick={saveDiscordInvite}
+                disabled={
+                  !canEditHotelName || discordLoading || !discordInvite.trim()
+                }
+              >
+                {discordLoading ? "Saving..." : "Save"}
               </button>
             </div>
           </div>

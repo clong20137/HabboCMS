@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import SiteLayout from "../components/layout/SiteLayout";
-import { api } from "../api/client";
+import { api, type LiveFeedEntry } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../ui/toast/ToastContext";
 import "../styles/login.scss";
@@ -21,16 +21,24 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileRenderKey, setTurnstileRenderKey] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // 2FA challenge state
   const [twoFaOpen, setTwoFaOpen] = useState(false);
   const [twoFaClosing, setTwoFaClosing] = useState(false);
   const [twoFaCode, setTwoFaCode] = useState("");
   const [twoFaBusy, setTwoFaBusy] = useState(false);
   const [challengeId, setChallengeId] = useState<string | null>(null);
 
+  const [liveFeed, setLiveFeed] = useState<LiveFeedEntry[]>([]);
+  const [liveFeedLoading, setLiveFeedLoading] = useState(true);
+
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+
+  function resetVerification() {
+    setCaptchaToken(null);
+    setTurnstileRenderKey((value) => value + 1);
+  }
 
   function open2FAModal(id: string) {
     setChallengeId(id);
@@ -51,7 +59,6 @@ export default function Login() {
     }, MODAL_ANIM_MS);
   }
 
-  // Lock scroll + ESC close
   useEffect(() => {
     if (!twoFaOpen) return;
 
@@ -67,8 +74,39 @@ export default function Login() {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [twoFaOpen]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadLiveFeed = async () => {
+      try {
+        const items = await api.getLiveFeed(20);
+        if (isMounted) {
+          setLiveFeed(items);
+        }
+      } catch {
+        if (isMounted) {
+          setLiveFeed([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLiveFeedLoading(false);
+        }
+      }
+    };
+
+    void loadLiveFeed();
+
+    const intervalId = window.setInterval(() => {
+      void loadLiveFeed();
+    }, 10000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -86,19 +124,16 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // login may return { twoFaRequired, challengeId }
       const res = await api.login(username, password, captchaToken);
 
       if ((res as any)?.twoFaRequired && (res as any)?.challengeId) {
-        // Password correct but must verify 2FA before session is created
         open2FAModal((res as any).challengeId);
         return;
       }
 
-      // Fully logged in
       await refresh();
       showToast("Welcome back!", "success");
-      nav("/client");
+      nav("/me", { replace: true });
     } catch (e: any) {
       showToast(
         e?.response?.data?.error ||
@@ -107,8 +142,7 @@ export default function Login() {
         "error",
       );
 
-      // reset token so user must re-verify after a failed attempt
-      setCaptchaToken(null);
+      resetVerification();
     } finally {
       setLoading(false);
     }
@@ -130,13 +164,11 @@ export default function Login() {
     setTwoFaBusy(true);
     try {
       await api.verifyLogin2FA(challengeId, code);
-
-      // now session cookie is set → refresh user
       await refresh();
 
       close2FAModal();
       showToast("Welcome back!", "success");
-      nav("/client");
+      nav("/me", { replace: true });
     } catch (e: any) {
       showToast(
         e?.response?.data?.error || e?.message || "Invalid code.",
@@ -152,7 +184,6 @@ export default function Login() {
     <SiteLayout active="home">
       <div className="login-page">
         <div className="login-grid">
-          {/* LOGIN */}
           <section className="panel login-panel">
             <div className="panel-head login-panel-head">
               <div className="login-panel-title">
@@ -180,10 +211,10 @@ export default function Login() {
                   autoComplete="current-password"
                 />
 
-                {/* TURNSTILE */}
                 {siteKey ? (
                   <div style={{ marginTop: 12 }}>
                     <Turnstile
+                      key={turnstileRenderKey}
                       siteKey={siteKey}
                       onSuccess={(token) => setCaptchaToken(token)}
                       onExpire={() => setCaptchaToken(null)}
@@ -225,7 +256,6 @@ export default function Login() {
             </div>
           </section>
 
-          {/* LIVE FEED */}
           <section className="panel livefeed-panel">
             <div className="panel-head">
               <div className="login-panel-title">
@@ -235,15 +265,44 @@ export default function Login() {
             </div>
 
             <div className="panel-body">
-              <div className="livefeed-empty muted">Live feed coming soon.</div>
+              <div className="livefeed-list">
+                {liveFeedLoading ? (
+                  <div className="livefeed-empty muted">Loading live feed...</div>
+                ) : liveFeed.length === 0 ? (
+                  <div className="livefeed-empty muted">No live feed activity yet.</div>
+                ) : (
+                  liveFeed.map((item) => (
+                    <div className="livefeed-item" key={item.id}>
+                      <div className="livefeed-avatar">
+                        {item.avatar_url ? (
+                          <img src={item.avatar_url} alt={item.username || "User"} />
+                        ) : (
+                          <div className="livefeed-avatar-fallback" />
+                        )}
+                      </div>
+
+                      <div className="livefeed-content">
+                        <div className="livefeed-top">
+                          <span className="livefeed-user">
+                            {item.username || "System"}
+                          </span>
+
+                          {item.tag ? (
+                            <span className="livefeed-tag">{item.tag}</span>
+                          ) : null}
+                        </div>
+
+                        <div className="livefeed-text">{item.content}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </section>
         </div>
       </div>
 
-      {/* ==========================
-2FA LOGIN MODAL
-========================== */}
       {twoFaOpen && (
         <div
           className={`acc-modal-overlay ${twoFaClosing ? "is-closing" : "is-open"}`}
