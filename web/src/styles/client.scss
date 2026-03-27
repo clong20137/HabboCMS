@@ -1,0 +1,95 @@
+html.client-open-fullscreen,
+body.client-open-fullscreen {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+}
+
+.client-shell {
+    position: fixed;
+    z-index: 10000;
+    background: #111;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+}
+
+.client-shell.is-full {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100dvw;
+    height: 100dvh;
+    max-width: 100dvw;
+    max-height: 100dvh;
+    border-radius: 0;
+    inset: 0;
+}
+
+.client-shell.is-dock {
+    right: 18px;
+    bottom: 18px;
+    width: 420px;
+    height: 300px;
+    border: solid 2px var(--secondary-color);
+}
+
+.client-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10001;
+    display: flex;
+    gap: 8px;
+}
+
+.client-body {
+    width: 100%;
+    height: 100%;
+}
+
+.client-body.no-header {
+    width: 100%;
+    height: 100%;
+}
+
+.client-iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #000;
+}
+
+.client-loading-mask {
+    width: 100%;
+    height: 100%;
+    background: #000;
+}
+
+.client-error {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: #111;
+}
+
+@media (max-width: 768px) {
+    .client-shell.is-dock {
+        right: 10px;
+        bottom: 10px;
+        width: calc(100vw - 20px);
+        height: min(60dvh, 420px);
+    }
+    .client-shell.is-full {
+        width: 100vw;
+        width: 100dvw;
+        height: 100vh;
+        height: 100dvh;
+    }
+}

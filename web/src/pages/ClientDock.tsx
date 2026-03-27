@@ -71,6 +71,7 @@ export default function ClientDockProvider({
   const [reloadKey, setReloadKey] = useState(0);
 
   const launchedRef = useRef(false);
+  const shellRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     saveDock(dock);
@@ -132,6 +133,75 @@ export default function ClientDockProvider({
     };
   }, [dock.open, reloadKey, loading, user, nitroBase]);
 
+  useEffect(() => {
+    const body = document.body;
+    const html = document.documentElement;
+
+    const lockScroll = dock.open && dock.fullscreen;
+
+    body.classList.toggle("client-open-fullscreen", lockScroll);
+    html.classList.toggle("client-open-fullscreen", lockScroll);
+
+    return () => {
+      body.classList.remove("client-open-fullscreen");
+      html.classList.remove("client-open-fullscreen");
+    };
+  }, [dock.open, dock.fullscreen]);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      const isFs = !!document.fullscreenElement;
+
+      if (!isFs && dock.open && dock.fullscreen) {
+        setDock((prev) => ({ ...prev, fullscreen: false }));
+      }
+    };
+
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+    };
+  }, [dock.open, dock.fullscreen]);
+
+  const requestTrueFullscreen = useCallback(async () => {
+    const el = shellRef.current as any;
+    if (!el) return;
+
+    try {
+      if (document.fullscreenElement) return;
+
+      if (el.requestFullscreen) {
+        await el.requestFullscreen({ navigationUI: "hide" });
+        return;
+      }
+
+      if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+        return;
+      }
+
+      if (el.webkitEnterFullscreen) {
+        el.webkitEnterFullscreen();
+      }
+    } catch {}
+  }, []);
+
+  const exitTrueFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        await document.exitFullscreen();
+        return;
+      }
+
+      const doc = document as any;
+
+      if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      }
+    } catch {}
+  }, []);
+
   const iframeSrc = useMemo(() => {
     if (!ticket || !nitroBase) return "";
 
@@ -152,17 +222,22 @@ export default function ClientDockProvider({
     setDock({ open: true, fullscreen: false });
   }, []);
 
-  const openFullscreen = useCallback(() => {
+  const openFullscreen = useCallback(async () => {
     setErr(null);
     setDock({ open: true, fullscreen: true });
-  }, []);
+
+    requestAnimationFrame(() => {
+      requestTrueFullscreen();
+    });
+  }, [requestTrueFullscreen]);
 
   const close = useCallback(() => {
     launchedRef.current = false;
     setErr(null);
     setTicket("");
     setDock({ open: false, fullscreen: false });
-  }, []);
+    exitTrueFullscreen();
+  }, [exitTrueFullscreen]);
 
   const refresh = useCallback(() => {
     launchedRef.current = false;
@@ -181,18 +256,30 @@ export default function ClientDockProvider({
     [openDock, openFullscreen, refresh, close],
   );
 
-  const toggleFullscreen = () => {
-    setDock((p) => ({ ...p, fullscreen: !p.fullscreen, open: true }));
+  const toggleFullscreen = async () => {
+    if (dock.fullscreen) {
+      setDock((p) => ({ ...p, fullscreen: false, open: true }));
+      await exitTrueFullscreen();
+    } else {
+      setDock((p) => ({ ...p, fullscreen: true, open: true }));
+      requestAnimationFrame(() => {
+        requestTrueFullscreen();
+      });
+    }
   };
 
-  const dockToCorner = () => {
+  const dockToCorner = async () => {
     setDock((p) => ({ ...p, fullscreen: false, open: true }));
+    await exitTrueFullscreen();
   };
 
   const showWindow = dock.open;
 
   const clientNode = showWindow ? (
-    <div className={`client-shell ${dock.fullscreen ? "is-full" : "is-dock"}`}>
+    <div
+      ref={shellRef}
+      className={`client-shell ${dock.fullscreen ? "is-full" : "is-dock"}`}
+    >
       <div className="client-controls">
         {dock.fullscreen ? (
           <button
@@ -234,23 +321,22 @@ export default function ClientDockProvider({
       </div>
 
       <div className="client-body no-header">
-        {!canShowClient ? (
-          <div className="panel" style={{ width: "100%" }}>
-            <div className="panel-body">
-              {err && <div className="form-alert form-alert--error">{err}</div>}
-              <div className="muted">Generating SSO and loading Nitro...</div>
-            </div>
+        {err ? (
+          <div className="client-error">
+            <div className="form-alert form-alert--error">{err}</div>
           </div>
-        ) : (
+        ) : canShowClient ? (
           <iframe
             key={reloadKey}
             id="nitro"
             src={iframeSrc}
             title="Nitro Client"
             className="client-iframe"
-            allow="clipboard-read; clipboard-write"
+            allow="clipboard-read; clipboard-write; fullscreen"
             allowFullScreen
           />
+        ) : (
+          <div className="client-loading-mask" aria-hidden="true" />
         )}
       </div>
     </div>
